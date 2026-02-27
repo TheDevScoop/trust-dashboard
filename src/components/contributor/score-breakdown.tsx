@@ -1,4 +1,4 @@
-import { ScoreBreakdown } from "@/lib/contributor-types";
+import type { ScoreBreakdown } from "@/lib/scoring-engine";
 
 interface ScoreBreakdownProps {
   breakdown: ScoreBreakdown;

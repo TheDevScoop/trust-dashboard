@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ScoreHistoryPoint } from "@/lib/contributor-types";
+import type { ScoreHistoryPoint } from "@/lib/scoring-engine";
 import { TIERS, getTierForScore } from "@/lib/trust-scoring";
 
 interface ScoreSparklineProps {

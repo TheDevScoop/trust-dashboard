@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ContributorEvent, EventDetail } from "@/lib/contributor-types";
+import type { TrustEvent as ContributorEvent, EventBreakdown as EventDetail } from "@/lib/scoring-engine";
 
 interface EventTimelineProps {
   username: string;
