@@ -4,7 +4,7 @@ import { ScoreBreakdownViz } from "@/components/contributor/score-breakdown";
 import { ScoreSparkline } from "@/components/contributor/score-sparkline";
 import { VelocityGauge } from "@/components/contributor/velocity-gauge";
 import { SkillsRadar } from "@/components/contributor/skills-radar";
-import { getContributor, getContributors, getContributorSkills } from "@/lib/data-loader";
+import { getContributor, getContributors, getContributorSkills, getContributorScoreHistory } from "@/lib/data-loader";
 import { TIERS, getNextTier, getPointsToNextTier } from "@/lib/trust-scoring";
 
 function formatPct(value: number): string {

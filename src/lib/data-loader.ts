@@ -110,8 +110,8 @@ function recomputeContributors(raw: RawContributor[], now: number): ContributorD
     // Recompute the trust score using the scoring engine with current time
     const result = computeTrustScore(state, undefined, now);
 
-    // Recompute score history
-    const scoreHistory = computeScoreHistory(state, undefined, now);
+    // Defer score history - computed lazily on demand via getContributorScoreHistory()
+    const scoreHistory: { timestamp: number; score: number }[] = [];
 
     // Determine tier from the freshly computed score
     const tier = getTierConfig(result.tier);
@@ -307,6 +307,31 @@ export function getContributor(username: string): ContributorData | undefined {
   return cachedContributors!.find(
     (c) => c.username.toLowerCase() === username.toLowerCase(),
   );
+}
+
+const scoreHistoryCache = new Map<string, { timestamp: number; score: number }[]>();
+
+export function getContributorScoreHistory(username: string): { timestamp: number; score: number }[] {
+  const key = username.toLowerCase();
+  if (scoreHistoryCache.has(key)) return scoreHistoryCache.get(key)!;
+
+  const contributor = getContributor(username);
+  if (!contributor || contributor.events.length === 0) {
+    const empty = [{ timestamp: Date.now(), score: 35 }];
+    scoreHistoryCache.set(key, empty);
+    return empty;
+  }
+
+  const state: ContributorState = {
+    contributor: contributor.username,
+    createdAt: new Date(contributor.firstSeenAt).getTime(),
+    events: contributor.events,
+    manualAdjustment: 0,
+  };
+
+  const history = computeScoreHistory(state, undefined, Date.now());
+  scoreHistoryCache.set(key, history);
+  return history;
 }
 
 export function getContributorSkills(username: string): ContributorSkills {
