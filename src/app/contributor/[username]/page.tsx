@@ -44,13 +44,6 @@ function estimateDaysToNextTier(profile: ContributorProfile): string {
   return `${days} days at current pace`;
 }
 
-export const dynamicParams = false;
-
-export async function generateStaticParams(): Promise<Array<{ username: string }>> {
-  const contributors = normalizeData(trustScoresData);
-  return contributors.map((contributor) => ({ username: contributor.username }));
-}
-
 export default async function ContributorDetailPage({
   params,
 }: {
