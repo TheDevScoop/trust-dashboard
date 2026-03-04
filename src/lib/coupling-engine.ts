@@ -3,14 +3,8 @@ import type {
   EcosystemNode,
   EcosystemEdge,
   NodeCategory,
-  ContributorInfo,
   EcosystemData,
-  GitHubContributor,
 } from "./ecosystem-types";
-import {
-  fetchRepoContributors,
-  fetchRepoPackageJson,
-} from "./github-client";
 
 const CORE_REPO_NAME = "eliza";
 const ELIZA_KEYWORDS = [
@@ -19,7 +13,8 @@ const ELIZA_KEYWORDS = [
   "ai16z",
   "agent",
   "ai-agent",
-  "autonomous-agent",
+  "autonomous",
+  "plugin",
 ];
 
 function categorizeRepo(repo: GitHubRepo, orgName: string): NodeCategory {
@@ -31,12 +26,13 @@ function categorizeRepo(repo: GitHubRepo, orgName: string): NodeCategory {
     name.includes("doc") ||
     name.includes("github.io") ||
     name.includes("website") ||
-    name.includes("landing")
+    name.includes("landing") ||
+    name.includes("awesome")
   ) {
     return "documentation";
   }
 
-  if (orgName === "elizaos-plugins") return "plugin";
+  if (orgName === "elizaos-plugins" || name.startsWith("plugin-")) return "plugin";
   if (orgName === "elizaOS") return "official-tool";
 
   return "community";
@@ -45,7 +41,7 @@ function categorizeRepo(repo: GitHubRepo, orgName: string): NodeCategory {
 function calcNameSimilarity(repo: GitHubRepo): number {
   const name = repo.name.toLowerCase();
   const desc = (repo.description || "").toLowerCase();
-  const topics = repo.topics.map((t) => t.toLowerCase());
+  const topics = (repo.topics || []).map((t) => t.toLowerCase());
 
   let score = 0;
   for (const kw of ELIZA_KEYWORDS) {
@@ -74,30 +70,11 @@ function calcCommunitySignal(
   maxStars: number,
   maxForks: number
 ): number {
-  const starScore = maxStars > 0 ? (repo.stargazers_count / maxStars) * 100 : 0;
-  const forkScore = maxForks > 0 ? (repo.forks_count / maxForks) * 100 : 0;
+  const starScore =
+    maxStars > 0 ? (repo.stargazers_count / maxStars) * 100 : 0;
+  const forkScore =
+    maxForks > 0 ? (repo.forks_count / maxForks) * 100 : 0;
   return Math.min(starScore * 0.7 + forkScore * 0.3, 100);
-}
-
-function calcDependencyCoupling(pkgJson: Record<string, unknown> | null): number {
-  if (!pkgJson) return 0;
-
-  let score = 0;
-  const deps = {
-    ...(pkgJson.dependencies as Record<string, string> || {}),
-    ...(pkgJson.devDependencies as Record<string, string> || {}),
-    ...(pkgJson.peerDependencies as Record<string, string> || {}),
-  };
-
-  const depNames = Object.keys(deps);
-  for (const dep of depNames) {
-    if (dep.startsWith("@elizaos/") || dep.startsWith("@ai16z/")) {
-      score += 20;
-    } else if (dep.includes("eliza")) {
-      score += 10;
-    }
-  }
-  return Math.min(score, 100);
 }
 
 function calcOrgProximity(orgName: string): number {
@@ -110,12 +87,36 @@ function calcForkRelationship(repo: GitHubRepo): number {
   return repo.fork ? 60 : 0;
 }
 
+// Heuristic-based dependency coupling (no API calls needed)
+function calcDependencyCouplingHeuristic(repo: GitHubRepo): number {
+  const name = repo.name.toLowerCase();
+  const desc = (repo.description || "").toLowerCase();
+
+  let score = 0;
+
+  // Plugin repos almost certainly depend on @elizaos/core
+  if (name.startsWith("plugin-")) score += 40;
+
+  // Name patterns suggesting tight coupling
+  if (name.includes("eliza-") || name.includes("-eliza")) score += 30;
+  if (name === "eliza" || name === "elizaos") score += 100;
+
+  // Description hints
+  if (desc.includes("@elizaos/") || desc.includes("@ai16z/")) score += 30;
+  if (desc.includes("plugin for eliza") || desc.includes("elizaos plugin")) score += 25;
+  if (desc.includes("eliza agent") || desc.includes("elizaos agent")) score += 20;
+
+  // Starter/template repos are tightly coupled
+  if (name.includes("starter") || name.includes("template")) score += 25;
+
+  return Math.min(score, 100);
+}
+
 function computeCouplingScore(
   repo: GitHubRepo,
   orgName: string,
   maxStars: number,
-  maxForks: number,
-  pkgJson: Record<string, unknown> | null
+  maxForks: number
 ): number {
   if (orgName === "elizaOS" && repo.name.toLowerCase() === CORE_REPO_NAME) {
     return 100;
@@ -123,16 +124,16 @@ function computeCouplingScore(
 
   const weights = {
     nameSimilarity: 0.2,
-    dependencyCoupling: 0.3,
+    dependencyCoupling: 0.25,
     orgProximity: 0.15,
     activityRecency: 0.15,
     communitySignal: 0.1,
-    forkRelationship: 0.1,
+    forkRelationship: 0.15,
   };
 
   const scores = {
     nameSimilarity: calcNameSimilarity(repo),
-    dependencyCoupling: calcDependencyCoupling(pkgJson),
+    dependencyCoupling: calcDependencyCouplingHeuristic(repo),
     orgProximity: calcOrgProximity(orgName),
     activityRecency: calcActivityRecency(repo),
     communitySignal: calcCommunitySignal(repo, maxStars, maxForks),
@@ -156,7 +157,7 @@ function buildEdges(nodes: EcosystemNode[]): EcosystemEdge[] {
     if (node.id === coreNode.id) continue;
 
     // All nodes connect to core with strength proportional to coupling
-    if (node.couplingScore > 15) {
+    if (node.couplingScore > 10) {
       edges.push({
         source: coreNode.id,
         target: node.id,
@@ -165,17 +166,22 @@ function buildEdges(nodes: EcosystemNode[]): EcosystemEdge[] {
       });
     }
 
-    // Connect repos that share topics
-    for (const other of nodes) {
-      if (other.id <= node.id || other.id === coreNode.id) continue;
-      const sharedTopics = node.topics.filter((t) => other.topics.includes(t));
-      if (sharedTopics.length >= 2) {
-        edges.push({
-          source: node.id,
-          target: other.id,
-          strength: Math.min(sharedTopics.length * 0.15, 0.6),
-          type: "topic",
-        });
+    // Connect repos that share topics (limit to avoid too many edges)
+    if (node.topics.length >= 2) {
+      for (const other of nodes) {
+        if (other.id <= node.id || other.id === coreNode.id) continue;
+        if (other.topics.length < 2) continue;
+        const sharedTopics = node.topics.filter((t) =>
+          other.topics.includes(t)
+        );
+        if (sharedTopics.length >= 2) {
+          edges.push({
+            source: node.id,
+            target: other.id,
+            strength: Math.min(sharedTopics.length * 0.15, 0.6),
+            type: "topic",
+          });
+        }
       }
     }
   }
@@ -187,45 +193,20 @@ export async function buildEcosystemData(
   elizaOSRepos: GitHubRepo[],
   pluginRepos: GitHubRepo[]
 ): Promise<EcosystemData> {
+  console.log(
+    `[coupling-engine] Building ecosystem data from ${elizaOSRepos.length} + ${pluginRepos.length} repos`
+  );
+
   const allRepos = [
     ...elizaOSRepos.map((r) => ({ repo: r, org: "elizaOS" })),
     ...pluginRepos.map((r) => ({ repo: r, org: "elizaos-plugins" })),
   ];
 
-  const maxStars = Math.max(...allRepos.map((r) => r.repo.stargazers_count), 1);
-  const maxForks = Math.max(...allRepos.map((r) => r.repo.forks_count), 1);
-
-  // Fetch package.json for top repos (by stars) to determine dependency coupling
-  const sortedByStars = [...allRepos].sort(
-    (a, b) => b.repo.stargazers_count - a.repo.stargazers_count
+  const maxStars = Math.max(
+    ...allRepos.map((r) => r.repo.stargazers_count),
+    1
   );
-  const topReposForPkgCheck = sortedByStars.slice(0, 50);
-
-  const pkgJsonMap = new Map<string, Record<string, unknown> | null>();
-  const pkgPromises = topReposForPkgCheck.map(async ({ repo }) => {
-    const pkg = await fetchRepoPackageJson(repo.full_name);
-    pkgJsonMap.set(repo.full_name, pkg);
-  });
-  await Promise.all(pkgPromises);
-
-  // Fetch contributors for top repos
-  const topReposForContribs = sortedByStars.slice(0, 30);
-  const contribMap = new Map<string, ContributorInfo[]>();
-  const contribPromises = topReposForContribs.map(async ({ repo }) => {
-    const contribs: GitHubContributor[] = await fetchRepoContributors(
-      repo.full_name,
-      5
-    );
-    contribMap.set(
-      repo.full_name,
-      contribs.map((c) => ({
-        login: c.login,
-        avatarUrl: c.avatar_url,
-        contributions: c.contributions,
-      }))
-    );
-  });
-  await Promise.all(contribPromises);
+  const maxForks = Math.max(...allRepos.map((r) => r.repo.forks_count), 1);
 
   const nodes: EcosystemNode[] = allRepos.map(({ repo, org }) => ({
     id: repo.full_name,
@@ -240,18 +221,15 @@ export async function buildEcosystemData(
     updatedAt: repo.updated_at,
     createdAt: repo.created_at,
     category: categorizeRepo(repo, org),
-    couplingScore: computeCouplingScore(
-      repo,
-      org,
-      maxStars,
-      maxForks,
-      pkgJsonMap.get(repo.full_name) || null
-    ),
+    couplingScore: computeCouplingScore(repo, org, maxStars, maxForks),
     homepage: repo.homepage,
     isFork: repo.fork,
     defaultBranch: repo.default_branch,
-    contributors: contribMap.get(repo.full_name) || [],
+    contributors: [],
   }));
+
+  // Sort by coupling score descending
+  nodes.sort((a, b) => b.couplingScore - a.couplingScore);
 
   const edges = buildEdges(nodes);
 
@@ -262,6 +240,10 @@ export async function buildEcosystemData(
   const totalForks = allRepos.reduce(
     (sum, { repo }) => sum + repo.forks_count,
     0
+  );
+
+  console.log(
+    `[coupling-engine] Built ${nodes.length} nodes, ${edges.length} edges. Total stars: ${totalStars}`
   );
 
   return {

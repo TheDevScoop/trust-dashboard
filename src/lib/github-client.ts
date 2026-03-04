@@ -9,8 +9,11 @@ function getHeaders(): HeadersInit {
     Accept: "application/vnd.github.v3+json",
     "User-Agent": "elizaos-ecosystem-graph",
   };
-  if (process.env.GITHUB_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
+  const token = process.env.GITHUB_TOKEN;
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  } else {
+    console.warn("[github-client] No GITHUB_TOKEN set. Rate limit: 60 req/hr.");
   }
   return headers;
 }
@@ -22,23 +25,42 @@ async function fetchAllPages<T>(url: string, maxPages = 10): Promise<T[]> {
 
   while (page <= maxPages) {
     const separator = url.includes("?") ? "&" : "?";
-    const resp = await fetch(`${url}${separator}per_page=100&page=${page}`, {
-      headers,
-    });
+    const fullUrl = `${url}${separator}per_page=100&page=${page}`;
+    console.log(`[github-client] Fetching page ${page}: ${fullUrl}`);
 
-    if (!resp.ok) {
-      if (resp.status === 403) {
-        console.warn(
-          "[github-client] Rate limited, returning partial results"
-        );
-        break;
-      }
-      throw new Error(`GitHub API error: ${resp.status} ${resp.statusText}`);
+    let resp: Response;
+    try {
+      resp = await fetch(fullUrl, { headers });
+    } catch (err) {
+      console.error(`[github-client] Network error fetching ${fullUrl}:`, err);
+      break;
     }
 
-    const data: T[] = await resp.json();
-    if (data.length === 0) break;
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => "");
+      console.error(
+        `[github-client] API error ${resp.status}: ${resp.statusText}`,
+        body.slice(0, 200)
+      );
+      if (resp.status === 403 || resp.status === 429) {
+        console.warn("[github-client] Rate limited, returning partial results");
+        break;
+      }
+      // For other errors, stop pagination but don't throw - return what we have
+      break;
+    }
+
+    let data: T[];
+    try {
+      data = await resp.json();
+    } catch {
+      console.error("[github-client] Failed to parse JSON response");
+      break;
+    }
+
+    if (!Array.isArray(data) || data.length === 0) break;
     results.push(...data);
+    console.log(`[github-client] Got ${data.length} items (total: ${results.length})`);
 
     const linkHeader = resp.headers.get("link");
     if (!linkHeader || !linkHeader.includes('rel="next"')) break;
@@ -49,9 +71,12 @@ async function fetchAllPages<T>(url: string, maxPages = 10): Promise<T[]> {
 }
 
 export async function fetchOrgRepos(org: string): Promise<GitHubRepo[]> {
-  return fetchAllPages<GitHubRepo>(
+  console.log(`[github-client] Fetching repos for org: ${org}`);
+  const repos = await fetchAllPages<GitHubRepo>(
     `${GITHUB_API}/orgs/${org}/repos?sort=updated&type=public`
   );
+  console.log(`[github-client] Fetched ${repos.length} repos from ${org}`);
+  return repos;
 }
 
 export async function fetchRepoContributors(
@@ -65,7 +90,8 @@ export async function fetchRepoContributors(
       { headers }
     );
     if (!resp.ok) return [];
-    return resp.json();
+    const data = await resp.json();
+    return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }
@@ -96,10 +122,17 @@ export async function fetchAllEcosystemRepos(): Promise<{
   elizaOSRepos: GitHubRepo[];
   pluginRepos: GitHubRepo[];
 }> {
+  console.log("[github-client] Starting full ecosystem fetch...");
   const [elizaOSRepos, pluginRepos] = await Promise.all([
     fetchOrgRepos(ELIZAOS_ORG),
     fetchOrgRepos(PLUGINS_ORG),
   ]);
+
+  console.log(
+    `[github-client] Total: ${elizaOSRepos.length} elizaOS + ${pluginRepos.length} plugins = ${
+      elizaOSRepos.length + pluginRepos.length
+    } repos`
+  );
 
   return { elizaOSRepos, pluginRepos };
 }
