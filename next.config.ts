@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   }),
   images: {
     unoptimized: true,
+    remotePatterns: [
+      { hostname: "avatars.githubusercontent.com" },
+    ],
   },
 };
 
