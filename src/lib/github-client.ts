@@ -24,7 +24,6 @@ async function fetchAllPages<T>(url: string, maxPages = 10): Promise<T[]> {
     const separator = url.includes("?") ? "&" : "?";
     const resp = await fetch(`${url}${separator}per_page=100&page=${page}`, {
       headers,
-      next: { revalidate: 300 },
     });
 
     if (!resp.ok) {
@@ -63,7 +62,7 @@ export async function fetchRepoContributors(
     const headers = getHeaders();
     const resp = await fetch(
       `${GITHUB_API}/repos/${fullName}/contributors?per_page=${limit}`,
-      { headers, next: { revalidate: 600 } }
+      { headers }
     );
     if (!resp.ok) return [];
     return resp.json();
@@ -79,7 +78,7 @@ export async function fetchRepoPackageJson(
     const headers = getHeaders();
     const resp = await fetch(
       `${GITHUB_API}/repos/${fullName}/contents/package.json`,
-      { headers, next: { revalidate: 600 } }
+      { headers }
     );
     if (!resp.ok) return null;
     const data = await resp.json();

@@ -19,10 +19,6 @@ const CATEGORY_LABELS: Record<string, string> = {
   documentation: "Docs",
 };
 
-const COUPLING_LABELS = [
-  { key: "couplingScore", label: "Overall Coupling", weight: "combined" },
-] as const;
-
 interface NodeDetailPanelProps {
   node: EcosystemNode;
   onClose: () => void;
