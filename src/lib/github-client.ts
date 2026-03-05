@@ -3,6 +3,7 @@ import type { GitHubRepo, GitHubContributor } from "./ecosystem-types";
 const GITHUB_API = "https://api.github.com";
 const ELIZAOS_ORG = "elizaOS";
 const PLUGINS_ORG = "elizaos-plugins";
+const ASSOCIATED_ORGS = ["milady-ai", "m3-org", "Agent-Town"];
 
 const REGISTRY_RAW_URL =
   "https://raw.githubusercontent.com/elizaos-plugins/registry/main/index.json";
@@ -200,14 +201,15 @@ export async function fetchAllEcosystemRepos(): Promise<{
 }> {
   console.log("[github-client] Starting full ecosystem fetch...");
 
-  // Fetch org repos, topic repos, and registry in parallel
-  const [elizaOSRepos, pluginOrgRepos, topicElizaos, topicElizaosPlugin, registry] =
+  // Fetch org repos, associated orgs, topic repos, and registry in parallel
+  const [elizaOSRepos, pluginOrgRepos, topicElizaos, topicElizaosPlugin, registry, ...associatedOrgResults] =
     await Promise.all([
       fetchOrgRepos(ELIZAOS_ORG),
       fetchOrgRepos(PLUGINS_ORG),
       searchReposByTopic("elizaos", 3),
       searchReposByTopic("elizaos-plugin", 2),
       fetchRegistryIndex(),
+      ...ASSOCIATED_ORGS.map((org) => fetchOrgRepos(org).catch(() => [] as GitHubRepo[])),
     ]);
 
   const registryPluginCount = Object.keys(registry).length;
@@ -217,11 +219,21 @@ export async function fetchAllEcosystemRepos(): Promise<{
   for (const r of elizaOSRepos) knownFullNames.add(r.full_name.toLowerCase());
   for (const r of pluginOrgRepos) knownFullNames.add(r.full_name.toLowerCase());
 
-  // Community repos = topic search results NOT in our orgs
+  // Community repos = associated orgs + topic search results NOT in core orgs
   const communityRepos: GitHubRepo[] = [];
-  const allTopicRepos = [...topicElizaos, ...topicElizaosPlugin];
   const seenCommunity = new Set<string>();
 
+  // Add associated org repos first (milady-ai, m3-org, etc.)
+  for (const orgRepos of associatedOrgResults) {
+    for (const repo of orgRepos) {
+      const key = repo.full_name.toLowerCase();
+      if (knownFullNames.has(key) || seenCommunity.has(key)) continue;
+      seenCommunity.add(key);
+      communityRepos.push(repo);
+    }
+  }
+
+  const allTopicRepos = [...topicElizaos, ...topicElizaosPlugin];
   for (const repo of allTopicRepos) {
     const key = repo.full_name.toLowerCase();
     if (knownFullNames.has(key) || seenCommunity.has(key)) continue;

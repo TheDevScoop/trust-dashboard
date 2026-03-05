@@ -49,37 +49,50 @@ function getSeedData(): {
   communityRepos: GitHubRepo[];
   registryPluginCount: number;
 } {
-  // ─── elizaOS org repos (61 repos total) ───
+  // ─── elizaOS org repos (all repos from org page) ───
   const elizaOSRepos: GitHubRepo[] = [
-    makeSeedRepo("elizaOS", "eliza", "Autonomous agents for everyone", 17680, 5447, "TypeScript", ["agent", "agentic", "ai", "autonomous", "chatbot", "crypto", "discord", "eliza", "elizaos", "framework", "plugins", "rag", "slack", "swarm", "telegram"], { homepage: "https://eliza.how/" }),
-    makeSeedRepo("elizaOS", "elizaos.github.io", "The elizaOS Website and Leaderboard", 45, 50, "TypeScript", ["elizaos", "website", "leaderboard"]),
-    makeSeedRepo("elizaOS", "eliza-starter", "Starter template for building Eliza agents", 240, 180, "TypeScript", ["eliza", "starter", "template", "agent"]),
+    makeSeedRepo("elizaOS", "eliza", "Autonomous agents for everyone", 17692, 5447, "TypeScript", ["agent", "agentic", "ai", "autonomous", "chatbot", "crypto", "discord", "eliza", "elizaos", "framework", "plugins", "rag", "slack", "swarm", "telegram"], { homepage: "https://eliza.how/" }),
+    makeSeedRepo("elizaOS", "elizaos.github.io", "Leaderboard of Eliza Contributors", 102, 50, "TypeScript", ["elizaos", "website", "leaderboard"]),
+    makeSeedRepo("elizaOS", "eliza-starter", "Starter template for building Eliza agents", 371, 180, "TypeScript", ["eliza", "starter", "template", "agent"]),
+    makeSeedRepo("elizaOS", "eliza-nextjs-starter", "Eliza v2 Document Chat Demo Built on Next.js", 15, 5, "TypeScript", ["starter", "nextjs", "v2", "chat"]),
     makeSeedRepo("elizaOS", "characterfile", "A simple file format for character data", 320, 110, "TypeScript", ["character", "ai", "npc", "personality"]),
     makeSeedRepo("elizaOS", "awesome-eliza", "A curated list of awesome things related to Eliza", 190, 40, "Markdown", ["awesome", "eliza", "list"]),
     makeSeedRepo("elizaOS", "agentmemory", "Easy-to-use agent memory backed by chromadb + postgres", 90, 25, "Python", ["memory", "agent", "rag", "chromadb"]),
-    makeSeedRepo("elizaOS", "knowledge", "Data: Ecosystem news, GitHub updates, discussion summaries for RAG", 65, 20, "Python", ["knowledge", "rag", "data", "elizaos"]),
+    makeSeedRepo("elizaOS", "knowledge", "Data: Ecosystem news, GitHub updates, discussion summaries for RAG", 66, 20, "Python", ["knowledge", "rag", "data", "elizaos"]),
     makeSeedRepo("elizaOS", "agent-twitter-client", "Twitter/X client for Eliza agents", 60, 25, "TypeScript", ["twitter", "x", "agent", "social"]),
-    makeSeedRepo("elizaOS", "eliza-docs", "Documentation for elizaOS framework", 30, 15, "MDX", ["docs", "documentation", "eliza"]),
-    makeSeedRepo("elizaOS", "token-manager", "Token balance management for agents", 15, 5, "TypeScript", ["token", "agent", "crypto"]),
-    makeSeedRepo("elizaOS", "runtime-config", "Runtime configuration system for elizaOS", 8, 2, "TypeScript", ["config", "runtime"]),
-    makeSeedRepo("elizaOS", "knowledge-base", "Knowledge base system for agent memory", 18, 8, "TypeScript", ["knowledge", "rag", "memory"]),
+    makeSeedRepo("elizaOS", "docs", "ElizaOS documentation", 4, 2, "MDX", ["docs", "documentation", "eliza"]),
     makeSeedRepo("elizaOS", "prr", "Sits on your PR and won't get up until it's ready", 5, 1, "TypeScript", ["pr", "review", "agent"]),
     makeSeedRepo("elizaOS", "otc-agent", "OTC trading agent", 8, 2, "TypeScript", ["trading", "otc", "agent"]),
-    makeSeedRepo("elizaOS", "openclaw-adapter", "Run Eliza plugins inside OpenClaw", 37, 7, "TypeScript", ["openclaw", "adapter"]),
+    makeSeedRepo("elizaOS", "openclaw-adapter", "Run Eliza plugins inside OpenClaw — wallets, connectors", 37, 7, "TypeScript", ["openclaw", "adapter"]),
     makeSeedRepo("elizaOS", "benchmarks", "Benchmark suite for elizaOS agents", 5, 0, "Python", ["benchmark", "testing"]),
     makeSeedRepo("elizaOS", "examples", "Examples of how to use elizaOS", 4, 0, "TypeScript", ["examples", "tutorial"]),
-    makeSeedRepo("elizaOS", "plugin-scripts", "Automation scripts to manage the 150+ plugins", 3, 1, "TypeScript", ["scripts", "automation"]),
-    makeSeedRepo("elizaOS", "workgroups", "Workgroups helping accelerate the Eliza ecosystem", 10, 3, "Markdown", ["community", "workgroups"]),
-    makeSeedRepo("elizaOS", "elizas-list", "Add Your Project to ElizasList!", 12, 5, "TypeScript", ["list", "projects", "community"]),
+    makeSeedRepo("elizaOS", "plugins-automation", "Automation scripts to manage the 150+ plugins in elizaos-plugins", 7, 2, "JavaScript", ["scripts", "automation"]),
+    makeSeedRepo("elizaOS", "workgroups", "Dedicated to workgroups helping accelerate the Eliza ecosystem", 10, 3, "Markdown", ["community", "workgroups"]),
+    makeSeedRepo("elizaOS", "registry", "elizaOS Plugin Registry", 20, 8, "TypeScript", ["registry", "plugins", "elizaos"]),
+    // Agent projects
+    makeSeedRepo("elizaOS", "spartan", "Your quant", 84, 15, "TypeScript", ["agent", "quant", "trading"]),
+    makeSeedRepo("elizaOS", "the-org", "Agents for organizations", 52, 10, "TypeScript", ["agent", "organization", "swarm"]),
+    makeSeedRepo("elizaOS", "otaku", "Autonomous DeFi trading and research agent", 27, 5, "JavaScript", ["defi", "trading", "agent", "autonomous"]),
+    makeSeedRepo("elizaOS", "SWEagent", "Autonomous software engineering agent built in elizaOS", 22, 5, "TypeScript", ["swe", "agent", "coding"]),
     // Games & 3D
-    makeSeedRepo("elizaOS", "eliza-3d-hyperfy-starter", "3D agent with custom Hyperfy plugin for prototyping 3D MMO", 41, 12, "TypeScript", ["3d", "hyperfy", "game", "mmo"]),
-    makeSeedRepo("elizaOS", "eliza-2004scape", "Eliza plays Runescape", 8, 2, "TypeScript", ["game", "runescape"]),
-    // More org repos
-    makeSeedRepo("elizaOS", "eliza-v2-starter", "Starter template for Eliza v2", 35, 20, "TypeScript", ["starter", "v2", "template"]),
-    makeSeedRepo("elizaOS", "golem-runner", "Mobile endless runner game with elemental golems on Starknet", 20, 8, "TypeScript", ["game", "starknet", "runner", "dojo"]),
-    makeSeedRepo("elizaOS", "autonomous-defi-agent", "Autonomous DeFi trading and research agent", 25, 10, "TypeScript", ["defi", "trading", "agent", "autonomous"]),
-    makeSeedRepo("elizaOS", "telegram-mini-app", "Telegram mini-app gamifying social impact", 15, 5, "TypeScript", ["telegram", "game", "social"]),
-    makeSeedRepo("elizaOS", "otaku", "Anime/manga related project", 5, 1, "TypeScript", ["otaku", "anime"]),
+    makeSeedRepo("elizaOS", "eliza-3d-hyperfy-starter", "3D agent project with custom Hyperfy plugin for prototyping 3D MMO", 41, 12, "TypeScript", ["3d", "hyperfy", "game", "mmo"]),
+    makeSeedRepo("elizaOS", "eliza-2004scape", "Eliza plays Runescape", 0, 0, "TypeScript", ["game", "runescape"]),
+    // Multimedia & tools
+    makeSeedRepo("elizaOS", "LiveVideoChat", "Live video chat with Eliza agents", 75, 15, "TypeScript", ["video", "chat", "realtime"]),
+    makeSeedRepo("elizaOS", "LJSpeechTools", "Tools for making LJSpeech datasets", 26, 5, "Python", ["speech", "dataset", "tts"]),
+    makeSeedRepo("elizaOS", "hat", "Add a cool hat to your image", 3, 1, "TypeScript", ["image", "fun"]),
+    makeSeedRepo("elizaOS", "hats", "Hats protocol", 3, 1, "TypeScript", ["hats", "protocol"]),
+    // Infrastructure
+    makeSeedRepo("elizaOS", "roadmap", "ElizaOS public roadmap", 15, 3, "Markdown", ["roadmap", "planning"]),
+    makeSeedRepo("elizaOS", "website", "ElizaOS website", 18, 5, "JavaScript", ["website"]),
+    makeSeedRepo("elizaOS", "x402.elizaos.ai", "Dynamic x402 routing with intelligent content negotiation", 2, 1, "JavaScript", ["x402", "routing"]),
+    makeSeedRepo("elizaOS", "vercel-api", "Next.js Vercel API routes for stuff we like", 1, 0, "TypeScript", ["api", "vercel"]),
+    makeSeedRepo("elizaOS", "trust_scoreboard", "Trust scoring dashboard", 11, 3, "TypeScript", ["trust", "scoring"]),
+    makeSeedRepo("elizaOS", "mcp-gateway", "MCP gateway for elizaOS", 12, 3, "TypeScript", ["mcp", "gateway"]),
+    makeSeedRepo("elizaOS", "mobile", "ElizaOS Cloud app with Privy React Native starter", 1, 0, "TypeScript", ["mobile", "react-native"]),
+    makeSeedRepo("elizaOS", "plugin-specification", "ElizaOS plugin specification", 1, 0, "TypeScript", ["plugin", "specification"]),
+    makeSeedRepo("elizaOS", "test-repo", "Repo with simple issues to test swe-agent", 1, 0, "Python", ["testing"]),
+    makeSeedRepo("elizaOS", "brandkit", "Assets, logos, and designs", 5, 2, "Markdown", ["brand", "design", "assets"]),
   ];
 
   // ─── elizaos-plugins org repos (268+ repos) ───
@@ -268,9 +281,19 @@ function getSeedData(): {
 
   // ─── Community & third-party repos (from topic search + registry) ───
   const communityRepos: GitHubRepo[] = [
-    // Major forks and community projects
+    // ─── milady-ai org (major associated project) ───
+    makeSeedRepo("milady-ai", "milady", "terminally online — personal AI assistant built on elizaOS", 500, 80, "TypeScript", ["elizaos", "agent", "ai", "personal-assistant", "milady"], { homepage: "https://milady.ai/" }),
+    makeSeedRepo("milady-ai", "trust-dashboard", "Trust scoring leaderboard and contributor analytics for milady", 15, 3, "TypeScript", ["trust", "leaderboard", "milady"]),
+    makeSeedRepo("milady-ai", "avatars", "VRM Avatars modeled after milady", 8, 2, "TypeScript", ["avatar", "vrm", "3d", "milady"]),
+    makeSeedRepo("milady-ai", "ai.milady.Milaidy", "Flatpak manifest for Milaidy — submit to Flathub", 3, 1, "TypeScript", ["flatpak", "linux", "milady"]),
+    makeSeedRepo("milady-ai", "homebrew-tap", "Homebrew tap for Milaidy — personal AI assistant", 3, 1, "Ruby", ["homebrew", "macos", "milady"]),
+    makeSeedRepo("milady-ai", "milady-workspace", "Use this for development of milaidy", 3, 1, "Shell", ["dev", "workspace", "milady"]),
+    makeSeedRepo("milady-ai", "flathub", "Flathub issue tracker and new submissions", 2, 0, "TypeScript", ["flathub", "milady"]),
+    makeSeedRepo("milady-ai", "apt", "APT repository for Milaidy — personal AI assistant", 2, 0, "Shell", ["apt", "linux", "milady"]),
+    // ─── Major community projects ───
     makeSeedRepo("thejoven", "awesome-eliza", "A curated list of awesome things related to eliza framework", 150, 30, "Markdown", ["awesome", "eliza", "list", "elizaos"]),
     makeSeedRepo("valory-xyz", "agents-fun-eliza", "Autonomous agent for Agents.fun ecosystem built on Eliza", 25, 8, "Python", ["agent", "elizaos", "autonomous"]),
+    makeSeedRepo("Agent-Town", "milady", "Automated cuteness — Agent Town fork of milady", 10, 3, "TypeScript", ["agent", "milady", "elizaos"]),
     // Third-party registry plugins
     makeSeedRepo("1BDO", "plugin-delta", "Delta integration for ElizaOS", 3, 1, "TypeScript", ["delta", "elizaos-plugin"]),
     makeSeedRepo("arthur-orderly", "arthur-eliza-plugin", "Arthur DEX plugin for ElizaOS", 4, 1, "TypeScript", ["dex", "elizaos-plugin"]),
