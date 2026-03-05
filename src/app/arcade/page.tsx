@@ -8,8 +8,9 @@ import { getLevelNode } from "@/lib/arcade-data";
 
 const OverworldMap = dynamic(() => import("@/components/overworld-map"), { ssr: false });
 const MKLeaderboard = dynamic(() => import("@/components/mk-leaderboard"), { ssr: false });
+const RepoScorecard = dynamic(() => import("@/components/repo-scorecard"), { ssr: false });
 
-type View = "overworld" | "leaderboard";
+type View = "overworld" | "leaderboard" | "grades";
 
 export default function ArcadePage() {
   const [view, setView] = useState<View>("overworld");
@@ -74,6 +75,12 @@ export default function ArcadePage() {
               >
                 LEADERBOARD
               </button>
+              <button
+                className={`arcade-tab ${view === "grades" ? "arcade-tab-active" : ""}`}
+                onClick={() => setView("grades")}
+              >
+                REPO GRADES
+              </button>
             </div>
             <Link
               href="/world"
@@ -97,9 +104,12 @@ export default function ArcadePage() {
                 title={
                   node
                     ? `${node.displayName} FIGHTERS`
-                    : "SELECT YOUR FIGHTER"
+                    : undefined
                 }
               />
+            )}
+            {view === "grades" && (
+              <RepoScorecard />
             )}
           </div>
 

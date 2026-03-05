@@ -5,8 +5,11 @@ import {
   ARCADE_FIGHTERS,
   TIER_COLORS,
   getFightersForRepo,
+  getAllRepoNames,
   type ArcadeFighter,
 } from "@/lib/arcade-data";
+
+type ScopeTab = "global" | "tier" | "repo";
 
 interface MKLeaderboardProps {
   filterRepo?: string;
@@ -14,15 +17,37 @@ interface MKLeaderboardProps {
 }
 
 export default function MKLeaderboard({ filterRepo, title }: MKLeaderboardProps) {
-  const fighters = filterRepo
-    ? getFightersForRepo(filterRepo)
-    : ARCADE_FIGHTERS;
+  const [scope, setScope] = useState<ScopeTab>(filterRepo ? "repo" : "global");
+  const [selectedTier, setSelectedTier] = useState<ArcadeFighter["tier"] | "all">("all");
+  const [selectedRepoFilter, setSelectedRepoFilter] = useState<string | undefined>(filterRepo);
+  const [showRepoDropdown, setShowRepoDropdown] = useState(false);
+
+  // Derive fighters list based on scope
+  let fighters: ArcadeFighter[];
+  let scopeTitle: string;
+
+  if (scope === "repo" && selectedRepoFilter) {
+    fighters = getFightersForRepo(selectedRepoFilter);
+    scopeTitle = `${selectedRepoFilter.toUpperCase()} FIGHTERS`;
+  } else if (scope === "tier" && selectedTier !== "all") {
+    fighters = ARCADE_FIGHTERS.filter((f) => f.tier === selectedTier);
+    scopeTitle = `${selectedTier.toUpperCase()} TIER`;
+  } else {
+    fighters = ARCADE_FIGHTERS;
+    scopeTitle = "SELECT YOUR FIGHTER";
+  }
 
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [showBio, setShowBio] = useState(false);
   const [vsFlash, setVsFlash] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
   const cols = Math.min(5, fighters.length);
+
+  // Reset selection when filters change
+  useEffect(() => {
+    setSelectedIdx(0);
+    setShowBio(false);
+  }, [scope, selectedTier, selectedRepoFilter]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -64,7 +89,7 @@ export default function MKLeaderboard({ filterRepo, title }: MKLeaderboardProps)
         <div className="mk-title-block">
           <div className="mk-subtitle">ELIZAOS ARCADE</div>
           <h1 className="mk-title">
-            {title || "SELECT YOUR FIGHTER"}
+            {title || scopeTitle}
           </h1>
           <div className="mk-title-underline" />
         </div>
@@ -73,12 +98,64 @@ export default function MKLeaderboard({ filterRepo, title }: MKLeaderboardProps)
         </div>
       </div>
 
-      {/* Scope tabs */}
+      {/* Scope tabs — functional */}
       <div className="mk-scope-tabs">
-        <span className="mk-scope-tab mk-scope-active">ALL FIGHTERS</span>
-        <span className="mk-scope-tab">BY TIER</span>
-        <span className="mk-scope-tab">BY REPO</span>
+        <button
+          className={`mk-scope-tab ${scope === "global" ? "mk-scope-active" : ""}`}
+          onClick={() => { setScope("global"); setShowRepoDropdown(false); }}
+        >
+          GLOBAL
+        </button>
+        <button
+          className={`mk-scope-tab ${scope === "tier" ? "mk-scope-active" : ""}`}
+          onClick={() => { setScope("tier"); setShowRepoDropdown(false); }}
+        >
+          BY TIER
+        </button>
+        <button
+          className={`mk-scope-tab ${scope === "repo" ? "mk-scope-active" : ""}`}
+          onClick={() => { setScope("repo"); setShowRepoDropdown((v) => !v); }}
+        >
+          BY REPO
+        </button>
       </div>
+
+      {/* Tier filter pills */}
+      {scope === "tier" && (
+        <div className="mk-filter-row">
+          {(["all", "boss", "champion", "warrior", "rookie"] as const).map((t) => (
+            <button
+              key={t}
+              className={`mk-filter-pill ${selectedTier === t ? "mk-filter-pill-active" : ""}`}
+              style={t !== "all" ? { borderColor: TIER_COLORS[t], color: selectedTier === t ? "#000" : TIER_COLORS[t], backgroundColor: selectedTier === t ? TIER_COLORS[t] : "transparent" } : undefined}
+              onClick={() => setSelectedTier(t)}
+            >
+              {t === "all" ? "ALL" : t.toUpperCase()}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Repo picker */}
+      {scope === "repo" && showRepoDropdown && (
+        <div className="mk-repo-picker">
+          <button
+            className={`mk-repo-pill ${!selectedRepoFilter ? "mk-repo-pill-active" : ""}`}
+            onClick={() => { setSelectedRepoFilter(undefined); setShowRepoDropdown(false); setScope("global"); }}
+          >
+            ALL REPOS
+          </button>
+          {getAllRepoNames().map((r) => (
+            <button
+              key={r}
+              className={`mk-repo-pill ${selectedRepoFilter === r ? "mk-repo-pill-active" : ""}`}
+              onClick={() => { setSelectedRepoFilter(r); setShowRepoDropdown(false); }}
+            >
+              {r}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="mk-main">
         {/* Fighter grid */}

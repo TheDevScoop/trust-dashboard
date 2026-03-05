@@ -337,6 +337,345 @@ export const PLUGIN_POWERUPS: ArcadePluginPowerUp[] = [
   { repo: "registry", displayName: "Registry", group: "infra", pathFrom: "eliza", pathTo: "plugin-node" },
 ];
 
+// ── Repo Grades (non-core repos scored across dimensions) ───────────
+export type RepoGradeLetter = "S" | "A" | "B" | "C" | "D" | "F";
+
+export interface RepoGrade {
+  repo: string;
+  displayName: string;
+  org: "elizaOS" | "elizaos-plugins";
+  category: "official-tool" | "plugin" | "documentation" | "community";
+  overallGrade: RepoGradeLetter;
+  overallScore: number; // 0-100
+  dimensions: {
+    activity: { grade: RepoGradeLetter; score: number; detail: string };
+    community: { grade: RepoGradeLetter; score: number; detail: string };
+    quality: { grade: RepoGradeLetter; score: number; detail: string };
+    adoption: { grade: RepoGradeLetter; score: number; detail: string };
+    maintenance: { grade: RepoGradeLetter; score: number; detail: string };
+  };
+  stats: {
+    stars: number;
+    forks: number;
+    contributors: number;
+    openIssues: number;
+    lastCommitDaysAgo: number;
+    weeklyCommits: number;
+  };
+}
+
+function gradeFromScore(score: number): RepoGradeLetter {
+  if (score >= 90) return "S";
+  if (score >= 75) return "A";
+  if (score >= 60) return "B";
+  if (score >= 45) return "C";
+  if (score >= 30) return "D";
+  return "F";
+}
+
+function makeRepoGrade(
+  repo: string,
+  displayName: string,
+  org: "elizaOS" | "elizaos-plugins",
+  category: RepoGrade["category"],
+  stats: RepoGrade["stats"],
+  dims: { activity: number; community: number; quality: number; adoption: number; maintenance: number },
+  details: { activity: string; community: string; quality: string; adoption: string; maintenance: string },
+): RepoGrade {
+  const overall = Math.round(
+    dims.activity * 0.25 + dims.community * 0.2 + dims.quality * 0.2 + dims.adoption * 0.2 + dims.maintenance * 0.15
+  );
+  return {
+    repo,
+    displayName,
+    org,
+    category,
+    overallGrade: gradeFromScore(overall),
+    overallScore: overall,
+    dimensions: {
+      activity: { grade: gradeFromScore(dims.activity), score: dims.activity, detail: details.activity },
+      community: { grade: gradeFromScore(dims.community), score: dims.community, detail: details.community },
+      quality: { grade: gradeFromScore(dims.quality), score: dims.quality, detail: details.quality },
+      adoption: { grade: gradeFromScore(dims.adoption), score: dims.adoption, detail: details.adoption },
+      maintenance: { grade: gradeFromScore(dims.maintenance), score: dims.maintenance, detail: details.maintenance },
+    },
+    stats,
+  };
+}
+
+export const REPO_GRADES: RepoGrade[] = [
+  // ── elizaOS org (non-core) ────────────────────────────────────────
+  makeRepoGrade("eliza-starter", "Starter Template", "elizaOS", "official-tool",
+    { stars: 240, forks: 180, contributors: 28, openIssues: 12, lastCommitDaysAgo: 3, weeklyCommits: 8 },
+    { activity: 78, community: 72, quality: 82, adoption: 80, maintenance: 85 },
+    { activity: "8 commits/week, active development", community: "28 contributors, growing", quality: "Clean template, well-documented", adoption: "240 stars, heavily forked", maintenance: "Updated 3 days ago" },
+  ),
+  makeRepoGrade("characterfile", "Character Format", "elizaOS", "official-tool",
+    { stars: 320, forks: 110, contributors: 19, openIssues: 8, lastCommitDaysAgo: 7, weeklyCommits: 4 },
+    { activity: 62, community: 65, quality: 88, adoption: 85, maintenance: 75 },
+    { activity: "4 commits/week, stable pace", community: "19 contributors", quality: "Simple, well-designed format", adoption: "320 stars, widely used", maintenance: "Updated last week" },
+  ),
+  makeRepoGrade("agentmemory", "Agent Memory", "elizaOS", "official-tool",
+    { stars: 90, forks: 25, contributors: 12, openIssues: 15, lastCommitDaysAgo: 5, weeklyCommits: 6 },
+    { activity: 70, community: 55, quality: 72, adoption: 58, maintenance: 68 },
+    { activity: "6 commits/week", community: "12 contributors", quality: "Solid chromadb integration", adoption: "90 stars, niche usage", maintenance: "Active, some open issues" },
+  ),
+  makeRepoGrade("agent-twitter-client", "Twitter Client", "elizaOS", "official-tool",
+    { stars: 60, forks: 25, contributors: 14, openIssues: 22, lastCommitDaysAgo: 2, weeklyCommits: 11 },
+    { activity: 85, community: 60, quality: 65, adoption: 55, maintenance: 62 },
+    { activity: "11 commits/week, very active", community: "14 contributors", quality: "API rate limits need work", adoption: "60 stars, growing", maintenance: "22 open issues" },
+  ),
+  makeRepoGrade("awesome-eliza", "Awesome List", "elizaOS", "documentation",
+    { stars: 190, forks: 40, contributors: 32, openIssues: 5, lastCommitDaysAgo: 1, weeklyCommits: 3 },
+    { activity: 55, community: 80, quality: 90, adoption: 78, maintenance: 92 },
+    { activity: "Community-driven updates", community: "32 contributors, very open", quality: "Well-organized, curated", adoption: "190 stars, reference material", maintenance: "Very well maintained" },
+  ),
+  makeRepoGrade("elizaos.github.io", "Website", "elizaOS", "documentation",
+    { stars: 45, forks: 50, contributors: 22, openIssues: 8, lastCommitDaysAgo: 1, weeklyCommits: 14 },
+    { activity: 90, community: 70, quality: 78, adoption: 52, maintenance: 88 },
+    { activity: "14 commits/week, rapid iteration", community: "22 contributors", quality: "Modern design, good UX", adoption: "Public-facing, key infra", maintenance: "Continuously deployed" },
+  ),
+  makeRepoGrade("eliza-docs", "Documentation", "elizaOS", "documentation",
+    { stars: 30, forks: 15, contributors: 18, openIssues: 14, lastCommitDaysAgo: 2, weeklyCommits: 7 },
+    { activity: 72, community: 65, quality: 70, adoption: 48, maintenance: 65 },
+    { activity: "7 commits/week", community: "18 doc contributors", quality: "Comprehensive but gaps exist", adoption: "Essential reference", maintenance: "Some stale sections" },
+  ),
+  makeRepoGrade("knowledge-base", "Knowledge Base", "elizaOS", "official-tool",
+    { stars: 18, forks: 8, contributors: 6, openIssues: 9, lastCommitDaysAgo: 12, weeklyCommits: 2 },
+    { activity: 42, community: 35, quality: 60, adoption: 32, maintenance: 45 },
+    { activity: "2 commits/week, slow", community: "6 contributors", quality: "Decent RAG pipeline", adoption: "18 stars, early stage", maintenance: "Needs attention" },
+  ),
+  makeRepoGrade("token-manager", "Token Manager", "elizaOS", "official-tool",
+    { stars: 15, forks: 5, contributors: 5, openIssues: 7, lastCommitDaysAgo: 14, weeklyCommits: 1 },
+    { activity: 35, community: 30, quality: 55, adoption: 28, maintenance: 40 },
+    { activity: "1 commit/week", community: "5 contributors", quality: "Basic balance tracking", adoption: "15 stars", maintenance: "2 weeks since update" },
+  ),
+  makeRepoGrade("prr", "PR Review Agent", "elizaOS", "official-tool",
+    { stars: 3, forks: 1, contributors: 3, openIssues: 4, lastCommitDaysAgo: 21, weeklyCommits: 0 },
+    { activity: 18, community: 15, quality: 45, adoption: 12, maintenance: 22 },
+    { activity: "Inactive, no weekly commits", community: "3 contributors", quality: "Prototype stage", adoption: "3 stars, minimal", maintenance: "3 weeks stale" },
+  ),
+  makeRepoGrade("openclaw-adapter", "OpenClaw Adapter", "elizaOS", "official-tool",
+    { stars: 37, forks: 7, contributors: 4, openIssues: 3, lastCommitDaysAgo: 30, weeklyCommits: 0 },
+    { activity: 15, community: 22, quality: 50, adoption: 38, maintenance: 18 },
+    { activity: "No recent commits", community: "4 contributors", quality: "Functional adapter", adoption: "37 stars, niche", maintenance: "1 month stale" },
+  ),
+  makeRepoGrade("examples", "Examples", "elizaOS", "official-tool",
+    { stars: 4, forks: 0, contributors: 4, openIssues: 2, lastCommitDaysAgo: 10, weeklyCommits: 1 },
+    { activity: 30, community: 25, quality: 55, adoption: 15, maintenance: 35 },
+    { activity: "Sporadic updates", community: "4 contributors", quality: "Basic examples", adoption: "4 stars, underused", maintenance: "Needs more examples" },
+  ),
+  makeRepoGrade("benchmarks", "Benchmarks", "elizaOS", "official-tool",
+    { stars: 5, forks: 0, contributors: 2, openIssues: 1, lastCommitDaysAgo: 45, weeklyCommits: 0 },
+    { activity: 10, community: 12, quality: 40, adoption: 15, maintenance: 12 },
+    { activity: "Dormant", community: "2 contributors", quality: "Early framework", adoption: "5 stars", maintenance: "45 days since update" },
+  ),
+  makeRepoGrade("runtime-config", "Runtime Config", "elizaOS", "official-tool",
+    { stars: 8, forks: 2, contributors: 3, openIssues: 3, lastCommitDaysAgo: 18, weeklyCommits: 0 },
+    { activity: 22, community: 18, quality: 52, adoption: 22, maintenance: 28 },
+    { activity: "Rarely updated", community: "3 contributors", quality: "Basic config system", adoption: "8 stars", maintenance: "Nearly 3 weeks stale" },
+  ),
+  makeRepoGrade("eliza-2004scape", "Runescape Eliza", "elizaOS", "community",
+    { stars: 0, forks: 0, contributors: 1, openIssues: 0, lastCommitDaysAgo: 60, weeklyCommits: 0 },
+    { activity: 5, community: 5, quality: 30, adoption: 5, maintenance: 5 },
+    { activity: "Experimental, inactive", community: "Solo project", quality: "Fun concept, early code", adoption: "No stars yet", maintenance: "2 months stale" },
+  ),
+
+  // ── elizaos-plugins org ───────────────────────────────────────────
+  makeRepoGrade("registry", "Plugin Registry", "elizaos-plugins", "plugin",
+    { stars: 50, forks: 30, contributors: 15, openIssues: 6, lastCommitDaysAgo: 1, weeklyCommits: 12 },
+    { activity: 88, community: 65, quality: 82, adoption: 72, maintenance: 90 },
+    { activity: "12 commits/week, critical infra", community: "15 contributors", quality: "Well-structured registry", adoption: "Core dependency", maintenance: "Continuously updated" },
+  ),
+  makeRepoGrade("plugin-discord", "Discord Plugin", "elizaos-plugins", "plugin",
+    { stars: 25, forks: 12, contributors: 11, openIssues: 8, lastCommitDaysAgo: 3, weeklyCommits: 5 },
+    { activity: 72, community: 58, quality: 78, adoption: 82, maintenance: 75 },
+    { activity: "5 commits/week", community: "11 contributors", quality: "Stable, full-featured", adoption: "Most popular connector", maintenance: "Actively maintained" },
+  ),
+  makeRepoGrade("plugin-telegram", "Telegram Plugin", "elizaos-plugins", "plugin",
+    { stars: 22, forks: 10, contributors: 9, openIssues: 6, lastCommitDaysAgo: 4, weeklyCommits: 4 },
+    { activity: 65, community: 52, quality: 75, adoption: 78, maintenance: 72 },
+    { activity: "4 commits/week", community: "9 contributors", quality: "Good bot API coverage", adoption: "High demand connector", maintenance: "Stable" },
+  ),
+  makeRepoGrade("plugin-twitter", "Twitter Plugin", "elizaos-plugins", "plugin",
+    { stars: 35, forks: 18, contributors: 13, openIssues: 15, lastCommitDaysAgo: 1, weeklyCommits: 9 },
+    { activity: 82, community: 62, quality: 68, adoption: 88, maintenance: 65 },
+    { activity: "9 commits/week, high velocity", community: "13 contributors", quality: "Rate limit challenges", adoption: "Most starred plugin", maintenance: "15 open issues" },
+  ),
+  makeRepoGrade("plugin-solana", "Solana Plugin", "elizaos-plugins", "plugin",
+    { stars: 30, forks: 15, contributors: 10, openIssues: 9, lastCommitDaysAgo: 2, weeklyCommits: 7 },
+    { activity: 78, community: 55, quality: 75, adoption: 82, maintenance: 70 },
+    { activity: "7 commits/week", community: "10 contributors", quality: "Solid wallet + TX support", adoption: "Core DeFi plugin", maintenance: "Active development" },
+  ),
+  makeRepoGrade("plugin-evm", "EVM Plugin", "elizaos-plugins", "plugin",
+    { stars: 28, forks: 14, contributors: 11, openIssues: 10, lastCommitDaysAgo: 3, weeklyCommits: 6 },
+    { activity: 72, community: 55, quality: 72, adoption: 78, maintenance: 68 },
+    { activity: "6 commits/week", community: "11 contributors, multi-chain", quality: "Broad EVM coverage", adoption: "Essential for ETH ecosystem", maintenance: "Some issues backlog" },
+  ),
+  makeRepoGrade("plugin-openai", "OpenAI Plugin", "elizaos-plugins", "plugin",
+    { stars: 20, forks: 9, contributors: 8, openIssues: 4, lastCommitDaysAgo: 5, weeklyCommits: 3 },
+    { activity: 55, community: 48, quality: 85, adoption: 90, maintenance: 78 },
+    { activity: "3 commits/week, stable", community: "8 contributors", quality: "Clean API wrapper", adoption: "Default LLM provider", maintenance: "Well-maintained" },
+  ),
+  makeRepoGrade("plugin-anthropic", "Anthropic Plugin", "elizaos-plugins", "plugin",
+    { stars: 18, forks: 7, contributors: 6, openIssues: 3, lastCommitDaysAgo: 7, weeklyCommits: 2 },
+    { activity: 48, community: 40, quality: 85, adoption: 75, maintenance: 78 },
+    { activity: "2 commits/week", community: "6 contributors", quality: "Clean Claude integration", adoption: "Popular alternative LLM", maintenance: "Well-maintained" },
+  ),
+  makeRepoGrade("plugin-node", "Node Runtime", "elizaos-plugins", "plugin",
+    { stars: 15, forks: 8, contributors: 7, openIssues: 3, lastCommitDaysAgo: 4, weeklyCommits: 3 },
+    { activity: 55, community: 42, quality: 80, adoption: 85, maintenance: 80 },
+    { activity: "3 commits/week", community: "7 contributors", quality: "Core runtime, solid", adoption: "Required dependency", maintenance: "Stable, low issues" },
+  ),
+  makeRepoGrade("plugin-bootstrap", "Bootstrap Plugin", "elizaos-plugins", "plugin",
+    { stars: 12, forks: 6, contributors: 6, openIssues: 2, lastCommitDaysAgo: 6, weeklyCommits: 2 },
+    { activity: 48, community: 38, quality: 78, adoption: 82, maintenance: 82 },
+    { activity: "2 commits/week", community: "6 contributors", quality: "Core actions, reliable", adoption: "Default plugin", maintenance: "Stable" },
+  ),
+  makeRepoGrade("plugin-image-generation", "Image Gen", "elizaos-plugins", "plugin",
+    { stars: 16, forks: 7, contributors: 5, openIssues: 6, lastCommitDaysAgo: 8, weeklyCommits: 2 },
+    { activity: 45, community: 35, quality: 68, adoption: 62, maintenance: 55 },
+    { activity: "2 commits/week", community: "5 contributors", quality: "Multiple backends", adoption: "Popular creative tool", maintenance: "Some stale issues" },
+  ),
+  makeRepoGrade("plugin-video-generation", "Video Gen", "elizaos-plugins", "plugin",
+    { stars: 10, forks: 4, contributors: 3, openIssues: 5, lastCommitDaysAgo: 20, weeklyCommits: 0 },
+    { activity: 22, community: 20, quality: 45, adoption: 35, maintenance: 28 },
+    { activity: "Inactive recently", community: "3 contributors", quality: "Basic generation pipeline", adoption: "10 stars", maintenance: "3 weeks since update" },
+  ),
+  makeRepoGrade("plugin-tts", "Text-to-Speech", "elizaos-plugins", "plugin",
+    { stars: 8, forks: 3, contributors: 3, openIssues: 4, lastCommitDaysAgo: 25, weeklyCommits: 0 },
+    { activity: 18, community: 18, quality: 52, adoption: 30, maintenance: 22 },
+    { activity: "No recent activity", community: "3 contributors", quality: "Basic TTS support", adoption: "8 stars", maintenance: "Needs refresh" },
+  ),
+  makeRepoGrade("plugin-coinbase", "Coinbase Plugin", "elizaos-plugins", "plugin",
+    { stars: 10, forks: 5, contributors: 4, openIssues: 3, lastCommitDaysAgo: 15, weeklyCommits: 1 },
+    { activity: 32, community: 28, quality: 65, adoption: 45, maintenance: 42 },
+    { activity: "1 commit/week", community: "4 contributors", quality: "Commerce API integration", adoption: "Niche payment use", maintenance: "2 weeks gap" },
+  ),
+  makeRepoGrade("plugin-starknet", "StarkNet Plugin", "elizaos-plugins", "plugin",
+    { stars: 8, forks: 3, contributors: 4, openIssues: 5, lastCommitDaysAgo: 12, weeklyCommits: 1 },
+    { activity: 32, community: 28, quality: 58, adoption: 30, maintenance: 38 },
+    { activity: "Sporadic commits", community: "4 contributors", quality: "Basic StarkNet support", adoption: "8 stars, niche", maintenance: "Needs work" },
+  ),
+  makeRepoGrade("plugin-near", "NEAR Plugin", "elizaos-plugins", "plugin",
+    { stars: 6, forks: 2, contributors: 3, openIssues: 4, lastCommitDaysAgo: 18, weeklyCommits: 0 },
+    { activity: 22, community: 20, quality: 50, adoption: 22, maintenance: 28 },
+    { activity: "Inactive", community: "3 contributors", quality: "Basic NEAR integration", adoption: "6 stars", maintenance: "Nearly 3 weeks stale" },
+  ),
+  makeRepoGrade("plugin-sui", "Sui Plugin", "elizaos-plugins", "plugin",
+    { stars: 5, forks: 2, contributors: 2, openIssues: 3, lastCommitDaysAgo: 22, weeklyCommits: 0 },
+    { activity: 18, community: 15, quality: 48, adoption: 18, maintenance: 22 },
+    { activity: "No recent commits", community: "2 contributors", quality: "Early Sui support", adoption: "5 stars", maintenance: "3+ weeks stale" },
+  ),
+  makeRepoGrade("plugin-whatsapp", "WhatsApp Plugin", "elizaos-plugins", "plugin",
+    { stars: 12, forks: 5, contributors: 5, openIssues: 7, lastCommitDaysAgo: 10, weeklyCommits: 1 },
+    { activity: 35, community: 32, quality: 58, adoption: 48, maintenance: 40 },
+    { activity: "1 commit/week", community: "5 contributors", quality: "Business API support", adoption: "12 stars, demand growing", maintenance: "Some open issues" },
+  ),
+  makeRepoGrade("plugin-slack", "Slack Plugin", "elizaos-plugins", "plugin",
+    { stars: 10, forks: 4, contributors: 4, openIssues: 5, lastCommitDaysAgo: 14, weeklyCommits: 1 },
+    { activity: 30, community: 28, quality: 62, adoption: 42, maintenance: 35 },
+    { activity: "Slow updates", community: "4 contributors", quality: "Workspace connector OK", adoption: "10 stars", maintenance: "2 weeks gap" },
+  ),
+  makeRepoGrade("plugin-farcaster", "Farcaster Plugin", "elizaos-plugins", "plugin",
+    { stars: 8, forks: 3, contributors: 4, openIssues: 3, lastCommitDaysAgo: 8, weeklyCommits: 2 },
+    { activity: 45, community: 32, quality: 62, adoption: 35, maintenance: 52 },
+    { activity: "2 commits/week", community: "4 web3 social devs", quality: "Hub/Neynar integration", adoption: "Growing protocol", maintenance: "Decent" },
+  ),
+  makeRepoGrade("plugin-lens", "Lens Plugin", "elizaos-plugins", "plugin",
+    { stars: 7, forks: 2, contributors: 3, openIssues: 4, lastCommitDaysAgo: 20, weeklyCommits: 0 },
+    { activity: 20, community: 20, quality: 50, adoption: 25, maintenance: 25 },
+    { activity: "Inactive", community: "3 contributors", quality: "V2 API coverage", adoption: "7 stars", maintenance: "3 weeks stale" },
+  ),
+  makeRepoGrade("plugin-github", "GitHub Plugin", "elizaos-plugins", "plugin",
+    { stars: 12, forks: 5, contributors: 6, openIssues: 4, lastCommitDaysAgo: 5, weeklyCommits: 3 },
+    { activity: 55, community: 40, quality: 72, adoption: 52, maintenance: 65 },
+    { activity: "3 commits/week", community: "6 contributors", quality: "PR/Issue automation", adoption: "12 stars, dev-focused", maintenance: "Active" },
+  ),
+  makeRepoGrade("plugin-web-search", "Web Search", "elizaos-plugins", "plugin",
+    { stars: 9, forks: 4, contributors: 4, openIssues: 3, lastCommitDaysAgo: 10, weeklyCommits: 1 },
+    { activity: 35, community: 28, quality: 65, adoption: 45, maintenance: 48 },
+    { activity: "1 commit/week", community: "4 contributors", quality: "Serpapi + custom scraping", adoption: "Key capability", maintenance: "OK" },
+  ),
+  makeRepoGrade("plugin-tee", "TEE Plugin", "elizaos-plugins", "plugin",
+    { stars: 7, forks: 3, contributors: 3, openIssues: 5, lastCommitDaysAgo: 12, weeklyCommits: 1 },
+    { activity: 32, community: 22, quality: 60, adoption: 28, maintenance: 38 },
+    { activity: "Sporadic", community: "3 security-focused devs", quality: "SGX/TDX enclave support", adoption: "7 stars, niche", maintenance: "Needs attention" },
+  ),
+  makeRepoGrade("plugin-rabbi-trader", "Rabbi Trader", "elizaos-plugins", "plugin",
+    { stars: 8, forks: 4, contributors: 3, openIssues: 6, lastCommitDaysAgo: 8, weeklyCommits: 2 },
+    { activity: 45, community: 22, quality: 55, adoption: 35, maintenance: 42 },
+    { activity: "2 commits/week", community: "3 DeFi devs", quality: "Basic trading strategies", adoption: "8 stars, crypto-native", maintenance: "Active but issues piling" },
+  ),
+  makeRepoGrade("plugin-nft-generation", "NFT Gen", "elizaos-plugins", "plugin",
+    { stars: 6, forks: 2, contributors: 3, openIssues: 3, lastCommitDaysAgo: 15, weeklyCommits: 0 },
+    { activity: 22, community: 20, quality: 48, adoption: 25, maintenance: 28 },
+    { activity: "Inactive", community: "3 contributors", quality: "Basic minting flow", adoption: "6 stars", maintenance: "2+ weeks stale" },
+  ),
+  makeRepoGrade("plugin-local-ai", "Local AI", "elizaos-plugins", "plugin",
+    { stars: 14, forks: 5, contributors: 4, openIssues: 8, lastCommitDaysAgo: 10, weeklyCommits: 1 },
+    { activity: 35, community: 28, quality: 62, adoption: 55, maintenance: 38 },
+    { activity: "1 commit/week", community: "4 contributors", quality: "Ollama/llama.cpp support", adoption: "Popular for local dev", maintenance: "8 open issues" },
+  ),
+  makeRepoGrade("plugin-giphy", "Giphy Plugin", "elizaos-plugins", "plugin",
+    { stars: 3, forks: 1, contributors: 2, openIssues: 1, lastCommitDaysAgo: 30, weeklyCommits: 0 },
+    { activity: 12, community: 12, quality: 55, adoption: 12, maintenance: 15 },
+    { activity: "Dormant", community: "2 contributors", quality: "Simple API wrapper", adoption: "3 stars", maintenance: "1 month stale" },
+  ),
+  makeRepoGrade("plugin-goat", "GOAT Plugin", "elizaos-plugins", "plugin",
+    { stars: 6, forks: 2, contributors: 3, openIssues: 2, lastCommitDaysAgo: 15, weeklyCommits: 0 },
+    { activity: 22, community: 20, quality: 55, adoption: 25, maintenance: 28 },
+    { activity: "Low activity", community: "3 contributors", quality: "Tool-use integration", adoption: "6 stars", maintenance: "2 weeks gap" },
+  ),
+  // Newer/smaller plugins
+  makeRepoGrade("plugin-coding-agent", "Coding Agent", "elizaos-plugins", "plugin",
+    { stars: 0, forks: 0, contributors: 1, openIssues: 0, lastCommitDaysAgo: 5, weeklyCommits: 3 },
+    { activity: 55, community: 8, quality: 45, adoption: 5, maintenance: 55 },
+    { activity: "Active development", community: "Solo developer", quality: "PTY-based CLI spawn", adoption: "Brand new", maintenance: "Actively built" },
+  ),
+  makeRepoGrade("plugin-ui", "Plugin UI SDK", "elizaos-plugins", "plugin",
+    { stars: 0, forks: 0, contributors: 1, openIssues: 0, lastCommitDaysAgo: 8, weeklyCommits: 2 },
+    { activity: 45, community: 8, quality: 42, adoption: 5, maintenance: 45 },
+    { activity: "In development", community: "Solo developer", quality: "Schema-driven renderers", adoption: "Pre-release", maintenance: "Active" },
+  ),
+  makeRepoGrade("plugin-allora", "Allora Plugin", "elizaos-plugins", "plugin",
+    { stars: 3, forks: 1, contributors: 2, openIssues: 2, lastCommitDaysAgo: 20, weeklyCommits: 0 },
+    { activity: 18, community: 12, quality: 45, adoption: 12, maintenance: 22 },
+    { activity: "Low activity", community: "2 contributors", quality: "Basic integration", adoption: "3 stars", maintenance: "3 weeks stale" },
+  ),
+  makeRepoGrade("plugin-birdeye", "Birdeye Plugin", "elizaos-plugins", "plugin",
+    { stars: 4, forks: 2, contributors: 2, openIssues: 1, lastCommitDaysAgo: 12, weeklyCommits: 1 },
+    { activity: 30, community: 15, quality: 58, adoption: 18, maintenance: 35 },
+    { activity: "Sporadic", community: "2 DeFi contributors", quality: "Token analytics API", adoption: "4 stars", maintenance: "OK" },
+  ),
+  makeRepoGrade("plugin-pyth", "Pyth Plugin", "elizaos-plugins", "plugin",
+    { stars: 3, forks: 1, contributors: 2, openIssues: 2, lastCommitDaysAgo: 18, weeklyCommits: 0 },
+    { activity: 18, community: 12, quality: 52, adoption: 15, maintenance: 25 },
+    { activity: "Low activity", community: "2 oracle devs", quality: "Price feed integration", adoption: "3 stars", maintenance: "Needs update" },
+  ),
+].sort((a, b) => b.overallScore - a.overallScore);
+
+export const GRADE_COLORS: Record<RepoGradeLetter, string> = {
+  S: "#ff0040",
+  A: "#ffd700",
+  B: "#22d3ee",
+  C: "#34d399",
+  D: "#f97316",
+  F: "#64748b",
+};
+
+// ── Helper: get all repos for a given grade ─────────────────────────
+export function getReposByGrade(grade: RepoGradeLetter): RepoGrade[] {
+  return REPO_GRADES.filter((r) => r.overallGrade === grade);
+}
+
+// ── Helper: get unique repo list for leaderboard filtering ──────────
+export function getAllRepoNames(): string[] {
+  const repos = new Set<string>();
+  ARCADE_FIGHTERS.forEach((f) => f.repos.forEach((r) => repos.add(r)));
+  return Array.from(repos).sort();
+}
+
 // ── Color maps ──────────────────────────────────────────────────────
 export const TIER_COLORS: Record<ArcadeFighter["tier"], string> = {
   boss: "#ff0040",
