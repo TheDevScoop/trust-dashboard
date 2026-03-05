@@ -16,9 +16,9 @@ export default function ArcadePage() {
   const [selectedRepo, setSelectedRepo] = useState<string | undefined>();
   const [showIntro, setShowIntro] = useState(true);
 
-  // Intro screen auto-dismiss
+  // Intro screen auto-dismiss (3s to match CSS animation)
   useEffect(() => {
-    const t = setTimeout(() => setShowIntro(false), 2500);
+    const t = setTimeout(() => setShowIntro(false), 3000);
     return () => clearTimeout(t);
   }, []);
 
@@ -40,7 +40,10 @@ export default function ArcadePage() {
           <div className="arcade-intro-text">
             <div className="arcade-intro-line1">elizaOS</div>
             <div className="arcade-intro-line2">A R C A D E</div>
-            <div className="arcade-intro-line3">INSERT COIN TO CONTINUE</div>
+            <div className="arcade-intro-copyright">
+              (C) 2024-2025 ELIZAOS FOUNDATION
+            </div>
+            <div className="arcade-intro-line3">PRESS START</div>
           </div>
         </div>
       )}
