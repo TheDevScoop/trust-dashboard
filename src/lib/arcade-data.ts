@@ -347,6 +347,10 @@ export interface RepoGrade {
   category: "official-tool" | "plugin" | "documentation" | "community";
   overallGrade: RepoGradeLetter;
   overallScore: number; // 0-100
+  /** Age in days since repo creation */
+  ageDays: number;
+  /** elizaEffect score — only meaningful for repos < 60 days old */
+  elizaEffect: number | null;
   dimensions: {
     activity: { grade: RepoGradeLetter; score: number; detail: string };
     community: { grade: RepoGradeLetter; score: number; detail: string };
@@ -381,12 +385,27 @@ function makeRepoGrade(
   stats: RepoGrade["stats"],
   dims: { activity: number; community: number; quality: number; adoption: number; maintenance: number },
   details: { activity: string; community: string; quality: string; adoption: string; maintenance: string },
+  ageDays: number = 365,
 ): RepoGrade {
   const overall = Math.round(
     dims.activity * 0.25 + dims.community * 0.2 + dims.quality * 0.2 + dims.adoption * 0.2 + dims.maintenance * 0.15
   );
+  // elizaEffect only for repos under 2 months old — measures early momentum
+  const elizaEffect = ageDays < 60
+    ? Math.round(
+        (stats.weeklyCommits * 120) +
+        (stats.stars * 25) +
+        (stats.contributors * 200) +
+        (stats.forks * 80) +
+        (dims.activity * 8) +
+        (dims.community * 6) +
+        ((60 - ageDays) * 5) // recency bonus
+      )
+    : null;
   return {
     repo,
+    ageDays,
+    elizaEffect,
     displayName,
     org,
     category,
@@ -627,31 +646,54 @@ export const REPO_GRADES: RepoGrade[] = [
     { activity: 22, community: 20, quality: 55, adoption: 25, maintenance: 28 },
     { activity: "Low activity", community: "3 contributors", quality: "Tool-use integration", adoption: "6 stars", maintenance: "2 weeks gap" },
   ),
-  // Newer/smaller plugins
+  // Newer/smaller plugins — ageDays < 60 get elizaEffect scoring
   makeRepoGrade("plugin-coding-agent", "Coding Agent", "elizaos-plugins", "plugin",
     { stars: 0, forks: 0, contributors: 1, openIssues: 0, lastCommitDaysAgo: 5, weeklyCommits: 3 },
     { activity: 55, community: 8, quality: 45, adoption: 5, maintenance: 55 },
     { activity: "Active development", community: "Solo developer", quality: "PTY-based CLI spawn", adoption: "Brand new", maintenance: "Actively built" },
+    18, // 18 days old
   ),
   makeRepoGrade("plugin-ui", "Plugin UI SDK", "elizaos-plugins", "plugin",
     { stars: 0, forks: 0, contributors: 1, openIssues: 0, lastCommitDaysAgo: 8, weeklyCommits: 2 },
     { activity: 45, community: 8, quality: 42, adoption: 5, maintenance: 45 },
     { activity: "In development", community: "Solo developer", quality: "Schema-driven renderers", adoption: "Pre-release", maintenance: "Active" },
+    22, // 22 days old
+  ),
+  makeRepoGrade("plugin-repoprompt", "RepoPrompt", "elizaos-plugins", "plugin",
+    { stars: 2, forks: 0, contributors: 1, openIssues: 1, lastCommitDaysAgo: 3, weeklyCommits: 4 },
+    { activity: 62, community: 8, quality: 40, adoption: 8, maintenance: 58 },
+    { activity: "4 commits/week, new project", community: "Solo developer", quality: "CLI integration early", adoption: "2 stars, brand new", maintenance: "Actively developed" },
+    12, // 12 days old
+  ),
+  makeRepoGrade("plugin-pi-ai", "Pi AI Bridge", "elizaos-plugins", "plugin",
+    { stars: 1, forks: 0, contributors: 1, openIssues: 0, lastCommitDaysAgo: 6, weeklyCommits: 2 },
+    { activity: 45, community: 8, quality: 38, adoption: 5, maintenance: 48 },
+    { activity: "Steady development", community: "Solo developer", quality: "Credential bridge MVP", adoption: "1 star, pre-launch", maintenance: "Active" },
+    15, // 15 days old
+  ),
+  makeRepoGrade("plugin-claude-code-workbench", "Claude Code Workbench", "elizaos-plugins", "plugin",
+    { stars: 3, forks: 1, contributors: 2, openIssues: 1, lastCommitDaysAgo: 2, weeklyCommits: 6 },
+    { activity: 75, community: 15, quality: 52, adoption: 12, maintenance: 72 },
+    { activity: "6 commits/week, rapid build", community: "2 early contributors", quality: "Companion workflow taking shape", adoption: "3 stars, early interest", maintenance: "Very active" },
+    25, // 25 days old
   ),
   makeRepoGrade("plugin-allora", "Allora Plugin", "elizaos-plugins", "plugin",
     { stars: 3, forks: 1, contributors: 2, openIssues: 2, lastCommitDaysAgo: 20, weeklyCommits: 0 },
     { activity: 18, community: 12, quality: 45, adoption: 12, maintenance: 22 },
     { activity: "Low activity", community: "2 contributors", quality: "Basic integration", adoption: "3 stars", maintenance: "3 weeks stale" },
+    45, // 45 days old — still gets elizaEffect
   ),
   makeRepoGrade("plugin-birdeye", "Birdeye Plugin", "elizaos-plugins", "plugin",
     { stars: 4, forks: 2, contributors: 2, openIssues: 1, lastCommitDaysAgo: 12, weeklyCommits: 1 },
     { activity: 30, community: 15, quality: 58, adoption: 18, maintenance: 35 },
     { activity: "Sporadic", community: "2 DeFi contributors", quality: "Token analytics API", adoption: "4 stars", maintenance: "OK" },
+    52, // 52 days old — still gets elizaEffect
   ),
   makeRepoGrade("plugin-pyth", "Pyth Plugin", "elizaos-plugins", "plugin",
     { stars: 3, forks: 1, contributors: 2, openIssues: 2, lastCommitDaysAgo: 18, weeklyCommits: 0 },
     { activity: 18, community: 12, quality: 52, adoption: 15, maintenance: 25 },
     { activity: "Low activity", community: "2 oracle devs", quality: "Price feed integration", adoption: "3 stars", maintenance: "Needs update" },
+    48, // 48 days old — still gets elizaEffect
   ),
 ].sort((a, b) => b.overallScore - a.overallScore);
 

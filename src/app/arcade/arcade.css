@@ -1612,3 +1612,81 @@
   border: 1px solid #1a1a2e;
   letter-spacing: 0.05em;
 }
+
+.sc-detail-tag-new {
+  color: #22d3ee;
+  border-color: #22d3ee44;
+  background: #22d3ee08;
+}
+
+/* ── elizaEffect badge (compact row) ─────────────────────────────── */
+.sc-eliza-effect-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 8px;
+  background: linear-gradient(180deg, #1a0a2a, #0d0618);
+  border: 1px solid #22d3ee44;
+  min-width: 70px;
+}
+
+.sc-ee-label {
+  font-size: 6px;
+  color: #22d3ee88;
+  letter-spacing: 0.15em;
+  font-weight: bold;
+}
+
+.sc-ee-value {
+  font-size: 12px;
+  font-weight: bold;
+  color: #22d3ee;
+  text-shadow: 0 0 8px #22d3ee44;
+  line-height: 1.1;
+}
+
+.sc-ee-age {
+  font-size: 6px;
+  color: #4a5568;
+}
+
+/* ── elizaEffect expanded detail ─────────────────────────────────── */
+.sc-ee-detail {
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: linear-gradient(90deg, #0a0818, #0d0a1a);
+  border: 1px solid #22d3ee33;
+  border-left: 3px solid #22d3ee;
+}
+
+.sc-ee-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.sc-ee-detail-label {
+  font-size: 8px;
+  color: #22d3ee88;
+  font-weight: bold;
+  letter-spacing: 0.15em;
+}
+
+.sc-ee-detail-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: #22d3ee;
+  text-shadow: 0 0 10px #22d3ee44;
+}
+
+.sc-ee-detail-meta {
+  font-size: 7px;
+  color: #4a5568;
+  margin-top: 3px;
+}
+
+.sc-ee-detail-breakdown {
+  font-size: 7px;
+  color: #3a3a50;
+  margin-top: 2px;
+}

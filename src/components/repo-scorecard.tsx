@@ -186,6 +186,15 @@ function RepoCard({
           <span>{repo.stats.contributors} devs</span>
         </div>
 
+        {/* elizaEffect badge — only for repos < 2 months old */}
+        {repo.elizaEffect !== null && (
+          <div className="sc-eliza-effect-badge">
+            <span className="sc-ee-label">elizaEffect</span>
+            <span className="sc-ee-value">{repo.elizaEffect.toLocaleString()}</span>
+            <span className="sc-ee-age">{repo.ageDays}d old</span>
+          </div>
+        )}
+
         {/* Expand indicator */}
         <div className="sc-card-expand">{expanded ? "[-]" : "[+]"}</div>
       </button>
@@ -245,10 +254,29 @@ function RepoCard({
             </div>
           </div>
 
+          {/* elizaEffect detail — only for repos < 2 months old */}
+          {repo.elizaEffect !== null && (
+            <div className="sc-ee-detail">
+              <div className="sc-ee-detail-header">
+                <span className="sc-ee-detail-label">elizaEffect SCORE</span>
+                <span className="sc-ee-detail-value">{repo.elizaEffect.toLocaleString()}</span>
+              </div>
+              <div className="sc-ee-detail-meta">
+                Repo age: {repo.ageDays} days | Early momentum metric for repos under 60 days old
+              </div>
+              <div className="sc-ee-detail-breakdown">
+                Factors: weekly commits ({repo.stats.weeklyCommits}x120) + stars ({repo.stats.stars}x25) + contributors ({repo.stats.contributors}x200) + forks ({repo.stats.forks}x80) + activity/community scores + recency bonus
+              </div>
+            </div>
+          )}
+
           {/* Category + org tags */}
           <div className="sc-detail-tags">
             <span className="sc-detail-tag">{repo.org}</span>
             <span className="sc-detail-tag">{repo.category}</span>
+            {repo.ageDays < 60 && (
+              <span className="sc-detail-tag sc-detail-tag-new">NEW ({repo.ageDays}d)</span>
+            )}
           </div>
         </div>
       )}
