@@ -28,9 +28,9 @@ export interface ArcadeLevelNode {
   repo: string;
   displayName: string;
   description: string;
-  org: "elizaOS" | "elizaos-plugins";
+  org: "elizaOS" | "elizaos-plugins" | "milady-ai" | "community";
   stars: number;
-  category: "core" | "official-tool" | "plugin" | "documentation" | "community";
+  category: "core" | "official-tool" | "plugin" | "documentation" | "community" | "game" | "infrastructure";
   /** Position on overworld map (grid coords) */
   x: number;
   y: number;
@@ -295,6 +295,16 @@ export const LEVEL_NODES: ArcadeLevelNode[] = [
   { repo: "plugin-whatsapp", displayName: "WHATSAPP LINK", description: "WhatsApp connector", org: "elizaos-plugins", stars: 12, category: "plugin", x: 11, y: 8, connections: ["plugin-telegram"], status: "active", sprite: "star" },
   { repo: "plugin-arbitrum", displayName: "ARBITRUM L2", description: "Arbitrum integration", org: "elizaos-plugins", stars: 3, category: "plugin", x: 14, y: 3, connections: ["plugin-evm"], status: "locked", sprite: "star" },
   { repo: "plugin-image-generation", displayName: "IMG GEN LAB", description: "AI image generation", org: "elizaos-plugins", stars: 16, category: "plugin", x: 7, y: 0, connections: ["plugin-openai"], status: "active", sprite: "star" },
+
+  // ── Major associated projects ──────────────────────────────────────
+  { repo: "milady", displayName: "MILADY CITADEL", description: "terminally online — personal AI on elizaOS", org: "milady-ai", stars: 500, category: "community", x: 4, y: 0, connections: ["eliza", "plugin-node", "plugin-discord"], status: "cleared", sprite: "castle" },
+  { repo: "spartan", displayName: "SPARTAN ARENA", description: "Your quant — trading agent", org: "elizaOS", stars: 84, category: "official-tool", x: 12, y: 0, connections: ["eliza", "plugin-solana", "plugin-evm"], status: "cleared", sprite: "fortress" },
+  { repo: "the-org", displayName: "THE ORG HQ", description: "Agents for organizations", org: "elizaOS", stars: 52, category: "official-tool", x: 0, y: 4, connections: ["eliza", "plugin-discord", "plugin-slack"], status: "cleared", sprite: "fortress" },
+  { repo: "LiveVideoChat", displayName: "VIDEO SANCTUM", description: "Live video chat with agents", org: "elizaOS", stars: 75, category: "official-tool", x: 10, y: 0, connections: ["eliza", "plugin-livekit"], status: "cleared", sprite: "tower" },
+  { repo: "SWEagent", displayName: "SWE FORGE", description: "Autonomous software engineering agent", org: "elizaOS", stars: 22, category: "official-tool", x: 14, y: 4, connections: ["eliza", "plugin-github"], status: "active", sprite: "tower" },
+  { repo: "mcp-gateway", displayName: "MCP GATEWAY", description: "Model Context Protocol gateway", org: "elizaOS", stars: 12, category: "infrastructure", x: 6, y: 8, connections: ["eliza", "plugin-mcp"], status: "active", sprite: "bridge" },
+  { repo: "trust_scoreboard", displayName: "TRUST TOWER", description: "Trust scoring dashboard", org: "elizaOS", stars: 11, category: "infrastructure", x: 8, y: 8, connections: ["eliza", "elizaos.github.io"], status: "active", sprite: "tower" },
+  { repo: "eliza-3d-hyperfy-starter", displayName: "3D HYPERWORLD", description: "3D MMO agent with Hyperfy", org: "elizaOS", stars: 41, category: "game", x: 14, y: 2, connections: ["eliza"], status: "active", sprite: "cave" },
 ];
 
 // ── Plugin power-ups on paths ───────────────────────────────────────
@@ -335,6 +345,16 @@ export const PLUGIN_POWERUPS: ArcadePluginPowerUp[] = [
   { repo: "plugin-pi-ai", displayName: "Pi AI", group: "ai", pathFrom: "plugin-anthropic", pathTo: "eliza" },
   { repo: "plugin-claude-code-workbench", displayName: "Claude Code", group: "dev", pathFrom: "plugin-anthropic", pathTo: "plugin-github" },
   { repo: "registry", displayName: "Registry", group: "infra", pathFrom: "eliza", pathTo: "plugin-node" },
+  // New power-ups for milady + new repos
+  { repo: "plugin-hyperliquid", displayName: "Hyperliquid", group: "defi", pathFrom: "spartan", pathTo: "plugin-evm" },
+  { repo: "plugin-binance", displayName: "Binance", group: "defi", pathFrom: "spartan", pathTo: "plugin-coinbase" },
+  { repo: "plugin-coingecko", displayName: "CoinGecko", group: "defi", pathFrom: "spartan", pathTo: "eliza" },
+  { repo: "plugin-livekit", displayName: "LiveKit", group: "media", pathFrom: "LiveVideoChat", pathTo: "eliza" },
+  { repo: "plugin-elevenlabs", displayName: "ElevenLabs", group: "media", pathFrom: "plugin-tts", pathTo: "eliza" },
+  { repo: "plugin-mcp", displayName: "MCP", group: "infra", pathFrom: "mcp-gateway", pathTo: "eliza" },
+  { repo: "plugin-linear", displayName: "Linear", group: "dev", pathFrom: "SWEagent", pathTo: "plugin-github" },
+  { repo: "plugin-ollama", displayName: "Ollama", group: "ai", pathFrom: "plugin-local-ai", pathTo: "milady" },
+  { repo: "plugin-3d-generation", displayName: "3D Gen", group: "media", pathFrom: "eliza-3d-hyperfy-starter", pathTo: "plugin-image-generation" },
 ];
 
 // ── Repo Grades (non-core repos scored across dimensions) ───────────
@@ -343,8 +363,8 @@ export type RepoGradeLetter = "S" | "A" | "B" | "C" | "D" | "F";
 export interface RepoGrade {
   repo: string;
   displayName: string;
-  org: "elizaOS" | "elizaos-plugins";
-  category: "official-tool" | "plugin" | "documentation" | "community";
+  org: "elizaOS" | "elizaos-plugins" | "milady-ai" | "community";
+  category: "official-tool" | "plugin" | "documentation" | "community" | "game" | "infrastructure";
   overallGrade: RepoGradeLetter;
   overallScore: number; // 0-100
   /** Age in days since repo creation */
@@ -380,7 +400,7 @@ function gradeFromScore(score: number): RepoGradeLetter {
 function makeRepoGrade(
   repo: string,
   displayName: string,
-  org: "elizaOS" | "elizaos-plugins",
+  org: RepoGrade["org"],
   category: RepoGrade["category"],
   stats: RepoGrade["stats"],
   dims: { activity: number; community: number; quality: number; adoption: number; maintenance: number },
@@ -694,6 +714,57 @@ export const REPO_GRADES: RepoGrade[] = [
     { activity: 18, community: 12, quality: 52, adoption: 15, maintenance: 25 },
     { activity: "Low activity", community: "2 oracle devs", quality: "Price feed integration", adoption: "3 stars", maintenance: "Needs update" },
     48, // 48 days old — still gets elizaEffect
+  ),
+  // ── milady-ai & new elizaOS repos ────────────────────────────────
+  makeRepoGrade("milady", "Milady (milaidy)", "milady-ai" as RepoGrade["org"], "community",
+    { stars: 500, forks: 80, contributors: 25, openIssues: 18, lastCommitDaysAgo: 1, weeklyCommits: 22 },
+    { activity: 92, community: 78, quality: 82, adoption: 88, maintenance: 85 },
+    { activity: "22 commits/week, extremely active", community: "25 contributors, fast growing", quality: "Production desktop app, multi-platform", adoption: "500 stars, biggest associated project", maintenance: "Continuously deployed" },
+  ),
+  makeRepoGrade("spartan", "Spartan Quant", "elizaOS", "official-tool",
+    { stars: 84, forks: 15, contributors: 8, openIssues: 5, lastCommitDaysAgo: 2, weeklyCommits: 9 },
+    { activity: 82, community: 48, quality: 75, adoption: 62, maintenance: 78 },
+    { activity: "9 commits/week, heavy development", community: "8 contributors", quality: "Trading agent framework", adoption: "84 stars, growing fast", maintenance: "Actively maintained" },
+  ),
+  makeRepoGrade("the-org", "The Org", "elizaOS", "official-tool",
+    { stars: 52, forks: 10, contributors: 6, openIssues: 8, lastCommitDaysAgo: 3, weeklyCommits: 7 },
+    { activity: 78, community: 42, quality: 70, adoption: 52, maintenance: 72 },
+    { activity: "7 commits/week", community: "6 contributors", quality: "Multi-agent orchestration", adoption: "52 stars, org-focused", maintenance: "Active development" },
+  ),
+  makeRepoGrade("LiveVideoChat", "Live Video Chat", "elizaOS", "official-tool",
+    { stars: 75, forks: 15, contributors: 7, openIssues: 6, lastCommitDaysAgo: 5, weeklyCommits: 4 },
+    { activity: 62, community: 45, quality: 72, adoption: 65, maintenance: 68 },
+    { activity: "4 commits/week", community: "7 contributors", quality: "WebRTC + agent integration", adoption: "75 stars, unique feature", maintenance: "Stable, maintained" },
+  ),
+  makeRepoGrade("SWEagent", "SWE Agent", "elizaOS", "official-tool",
+    { stars: 22, forks: 5, contributors: 4, openIssues: 3, lastCommitDaysAgo: 4, weeklyCommits: 5 },
+    { activity: 68, community: 30, quality: 65, adoption: 38, maintenance: 65 },
+    { activity: "5 commits/week, active", community: "4 contributors", quality: "Autonomous coding agent", adoption: "22 stars, developer-focused", maintenance: "Active" },
+  ),
+  makeRepoGrade("mcp-gateway", "MCP Gateway", "elizaOS", "infrastructure" as RepoGrade["category"],
+    { stars: 12, forks: 3, contributors: 3, openIssues: 2, lastCommitDaysAgo: 6, weeklyCommits: 3 },
+    { activity: 55, community: 25, quality: 68, adoption: 35, maintenance: 60 },
+    { activity: "3 commits/week", community: "3 contributors", quality: "Model Context Protocol gateway", adoption: "12 stars", maintenance: "Active" },
+  ),
+  makeRepoGrade("trust_scoreboard", "Trust Scoreboard", "elizaOS", "infrastructure" as RepoGrade["category"],
+    { stars: 11, forks: 3, contributors: 4, openIssues: 2, lastCommitDaysAgo: 7, weeklyCommits: 2 },
+    { activity: 45, community: 28, quality: 62, adoption: 30, maintenance: 52 },
+    { activity: "2 commits/week", community: "4 contributors", quality: "Trust scoring system", adoption: "11 stars", maintenance: "Steady" },
+  ),
+  makeRepoGrade("knowledge", "Knowledge Base", "elizaOS", "documentation",
+    { stars: 66, forks: 20, contributors: 10, openIssues: 4, lastCommitDaysAgo: 1, weeklyCommits: 8 },
+    { activity: 80, community: 55, quality: 78, adoption: 62, maintenance: 82 },
+    { activity: "8 commits/week, daily updates", community: "10 contributors", quality: "RAG-ready ecosystem data", adoption: "66 stars, key infra", maintenance: "Continuously updated" },
+  ),
+  makeRepoGrade("eliza-3d-hyperfy-starter", "3D Hyperfy Starter", "elizaOS", "game" as RepoGrade["category"],
+    { stars: 41, forks: 12, contributors: 5, openIssues: 3, lastCommitDaysAgo: 8, weeklyCommits: 2 },
+    { activity: 45, community: 35, quality: 65, adoption: 42, maintenance: 48 },
+    { activity: "2 commits/week", community: "5 contributors", quality: "3D MMO prototyping framework", adoption: "41 stars, unique niche", maintenance: "Periodic updates" },
+  ),
+  makeRepoGrade("LJSpeechTools", "LJ Speech Tools", "elizaOS", "official-tool",
+    { stars: 26, forks: 5, contributors: 3, openIssues: 1, lastCommitDaysAgo: 20, weeklyCommits: 0 },
+    { activity: 18, community: 20, quality: 62, adoption: 35, maintenance: 25 },
+    { activity: "Low activity recently", community: "3 contributors", quality: "Speech dataset generation", adoption: "26 stars", maintenance: "3 weeks stale" },
   ),
 ].sort((a, b) => b.overallScore - a.overallScore);
 
