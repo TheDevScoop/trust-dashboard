@@ -1,13 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
+const jetbrains = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
-const siteTitle = "elizaOS Ecosystem Graph";
+const siteTitle = "ELIZA // Universal Cartography";
 const siteDescription =
-  "Interactive force-directed visualization of the elizaOS ecosystem -- repos, plugins, and projects mapped by coupling strength.";
-const faviconSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%2306060b'/><circle cx='32' cy='32' r='12' fill='none' stroke='%2322d3ee' stroke-width='2'/><circle cx='32' cy='32' r='4' fill='%2322d3ee'/><circle cx='32' cy='32' r='22' fill='none' stroke='%233b82f6' stroke-width='1' opacity='0.5'/><circle cx='32' cy='32' r='28' fill='none' stroke='%23a78bfa' stroke-width='0.5' opacity='0.3'/></svg>`;
+  "Navigating the elizaOS cosmos - an interactive stellar map of repositories, plugins, and systems across the AI agent universe.";
+const faviconSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='8' fill='%23020408'/><circle cx='32' cy='32' r='8' fill='%23fef08a'/><circle cx='32' cy='32' r='16' fill='none' stroke='%2338bdf8' stroke-width='1' opacity='0.6'/><circle cx='32' cy='32' r='24' fill='none' stroke='%23c084fc' stroke-width='0.5' opacity='0.4'/></svg>`;
 
 export const metadata: Metadata = {
   title: siteTitle,
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#06060b",
+  themeColor: "#020408",
   width: "device-width",
   initialScale: 1,
 };
@@ -34,8 +35,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${inter.className}`}>
-      <body className="min-h-screen antialiased overflow-hidden">
+    <html lang="en" className={`dark ${inter.variable} ${jetbrains.variable}`}>
+      <body className="min-h-screen antialiased overflow-hidden font-sans">
+        <div className="starfield" aria-hidden="true" />
         {children}
       </body>
     </html>

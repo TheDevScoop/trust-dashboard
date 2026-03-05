@@ -1,22 +1,22 @@
 "use client";
 
-import { X, Star, GitFork, AlertCircle, ExternalLink, Users, Zap } from "lucide-react";
+import { X, Star, GitFork, AlertCircle, ExternalLink, Users, Zap, Radio, Orbit } from "lucide-react";
 import type { EcosystemNode } from "@/lib/ecosystem-types";
 
-const CATEGORY_COLORS: Record<string, string> = {
-  core: "#22d3ee",
-  "official-tool": "#3b82f6",
-  plugin: "#a78bfa",
-  community: "#34d399",
-  documentation: "#fbbf24",
+const STAR_COLORS: Record<string, { main: string; glow: string }> = {
+  core: { main: "#fef08a", glow: "#fbbf24" },
+  "official-tool": { main: "#38bdf8", glow: "#0ea5e9" },
+  plugin: { main: "#c084fc", glow: "#a855f7" },
+  community: { main: "#4ade80", glow: "#22c55e" },
+  documentation: { main: "#fb923c", glow: "#f97316" },
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  core: "Core",
-  "official-tool": "Official",
-  plugin: "Plugin",
-  community: "Community",
-  documentation: "Docs",
+  core: "PRIME STAR",
+  "official-tool": "ORBITAL STATION",
+  plugin: "SATELLITE",
+  community: "OUTPOST",
+  documentation: "DATA ARCHIVE",
 };
 
 interface NodeDetailPanelProps {
@@ -32,141 +32,157 @@ export default function NodeDetailPanel({
   onExpand,
   isExpanded,
 }: NodeDetailPanelProps) {
-  const color = CATEGORY_COLORS[node.category] || "#64748b";
+  const colors = STAR_COLORS[node.category] || STAR_COLORS.community;
   const timeSinceUpdate = getTimeSince(node.updatedAt);
 
   return (
-    <div className="absolute right-0 top-0 h-full w-[360px] z-40 animate-slide-in-right">
-      <div className="h-full border-l border-border bg-card/90 backdrop-blur-xl flex flex-col overflow-hidden">
+    <div className="absolute right-0 top-0 h-full w-[380px] z-40 animate-slide-in-right">
+      <div className="h-full border-l border-border bg-gradient-to-b from-[#080f1e]/98 to-[#0f1729]/95 backdrop-blur-xl flex flex-col overflow-hidden">
+        {/* Scan line effect */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-accent/50 to-transparent animate-pulse" />
+        </div>
+
         {/* Header */}
-        <div className="flex items-start justify-between p-4 border-b border-border">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span
-                className="inline-block w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: color }}
-              />
-              <span
-                className="text-xs font-medium px-2 py-0.5 rounded-full"
-                style={{
-                  color,
-                  backgroundColor: color + "1a",
-                  border: `1px solid ${color}33`,
-                }}
+        <div className="relative p-5 border-b border-border">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              {/* Category badge */}
+              <div className="flex items-center gap-2 mb-2">
+                <span
+                  className="w-3 h-3 rounded-full animate-pulse"
+                  style={{ backgroundColor: colors.main, boxShadow: `0 0 12px ${colors.main}` }}
+                />
+                <span
+                  className="text-[10px] font-mono tracking-[0.2em] px-2 py-0.5 rounded"
+                  style={{
+                    color: colors.main,
+                    backgroundColor: colors.main + "15",
+                    border: `1px solid ${colors.main}30`,
+                  }}
+                >
+                  {CATEGORY_LABELS[node.category] || node.category.toUpperCase()}
+                </span>
+              </div>
+
+              {/* Name */}
+              <h2
+                className="text-xl font-bold font-mono tracking-wide truncate"
+                style={{ color: colors.main }}
               >
-                {CATEGORY_LABELS[node.category] || node.category}
-              </span>
+                {node.category === "core" ? "ELIZA PRIME" : node.name.toUpperCase()}
+              </h2>
+              <p className="text-xs text-muted-foreground font-mono mt-1 opacity-70">
+                {node.fullName}
+              </p>
             </div>
-            <h2 className="text-lg font-bold text-foreground truncate">
-              {node.name}
-            </h2>
-            <p className="text-xs text-muted-foreground font-mono">
-              {node.fullName}
-            </p>
+            <button
+              onClick={onClose}
+              className="p-2 rounded-lg hover:bg-accent/10 text-muted-foreground hover:text-accent transition-colors"
+              aria-label="Close panel"
+            >
+              <X size={18} />
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-md hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            aria-label="Close panel"
-          >
-            <X size={18} />
-          </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Description */}
           {node.description && (
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {node.description}
-            </p>
+            <div className="hud-panel rounded-lg p-4 relative">
+              <div className="hud-corner hud-corner-tl" />
+              <div className="hud-corner hud-corner-tr" />
+              <div className="hud-corner hud-corner-bl" />
+              <div className="hud-corner hud-corner-br" />
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {node.description}
+              </p>
+            </div>
           )}
 
           {/* Stats grid */}
           <div className="grid grid-cols-2 gap-3">
             <StatCard
               icon={<Star size={14} />}
-              label="Stars"
+              label="LUMINOSITY"
               value={node.stars.toLocaleString()}
               color="#fbbf24"
             />
             <StatCard
               icon={<GitFork size={14} />}
-              label="Forks"
+              label="FORKS"
               value={node.forks.toLocaleString()}
-              color="#3b82f6"
+              color="#38bdf8"
             />
             <StatCard
               icon={<AlertCircle size={14} />}
-              label="Issues"
+              label="ANOMALIES"
               value={node.openIssues.toLocaleString()}
-              color="#f87171"
+              color="#f43f5e"
             />
             <StatCard
               icon={<Zap size={14} />}
-              label="Coupling"
+              label="COUPLING"
               value={`${node.couplingScore}/100`}
-              color={color}
+              color={colors.main}
             />
           </div>
 
-          {/* Coupling score bar */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Coupling Strength
+          {/* Coupling strength visualization */}
+          <div className="hud-panel rounded-lg p-4 relative">
+            <div className="hud-corner hud-corner-tl" />
+            <div className="hud-corner hud-corner-tr" />
+            <div className="hud-corner hud-corner-bl" />
+            <div className="hud-corner hud-corner-br" />
+            
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[10px] font-mono text-accent tracking-[0.2em]">
+                GRAVITATIONAL BINDING
               </span>
-              <span
-                className="text-xs font-mono font-bold"
-                style={{ color }}
-              >
-                {node.couplingScore}
+              <span className="text-sm font-mono font-bold" style={{ color: colors.main }}>
+                {node.couplingScore}%
               </span>
             </div>
             <div className="h-2 rounded-full bg-muted overflow-hidden">
               <div
-                className="h-full rounded-full transition-all duration-500"
+                className="h-full rounded-full transition-all duration-700 ease-out"
                 style={{
                   width: `${node.couplingScore}%`,
-                  backgroundColor: color,
+                  background: `linear-gradient(90deg, ${colors.glow}, ${colors.main})`,
+                  boxShadow: `0 0 20px ${colors.main}50`,
                 }}
               />
             </div>
+            <p className="text-[10px] font-mono text-muted-foreground mt-2 opacity-70">
+              {node.couplingScore >= 80
+                ? "TIGHTLY BOUND TO CORE"
+                : node.couplingScore >= 50
+                ? "MODERATE ORBITAL DISTANCE"
+                : "OUTER SYSTEM BODY"}
+            </p>
           </div>
 
           {/* Meta info */}
-          <div className="space-y-2 text-sm">
+          <div className="space-y-2">
             {node.language && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Language</span>
-                <span className="text-foreground font-medium">
-                  {node.language}
-                </span>
-              </div>
+              <MetaRow label="PRIMARY LANG" value={node.language} />
             )}
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Updated</span>
-              <span className="text-foreground">{timeSinceUpdate}</span>
-            </div>
-            {node.isFork && (
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Fork</span>
-                <span className="text-foreground">Yes</span>
-              </div>
-            )}
+            <MetaRow label="LAST SIGNAL" value={timeSinceUpdate} />
+            {node.isFork && <MetaRow label="ORIGIN" value="FORKED BODY" />}
           </div>
 
           {/* Topics */}
           {node.topics.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                Topics
+              <p className="text-[10px] font-mono text-accent tracking-[0.2em] mb-3">
+                CLASSIFICATION TAGS
               </p>
               <div className="flex flex-wrap gap-1.5">
-                {node.topics.slice(0, 10).map((topic) => (
+                {node.topics.slice(0, 12).map((topic) => (
                   <span
                     key={topic}
-                    className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground border border-border"
+                    className="text-[10px] font-mono px-2 py-1 rounded bg-muted/50 text-muted-foreground border border-border"
                   >
                     {topic}
                   </span>
@@ -178,29 +194,38 @@ export default function NodeDetailPanel({
           {/* Contributors */}
           {node.contributors.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                Top Contributors
+              <p className="text-[10px] font-mono text-accent tracking-[0.2em] mb-3">
+                CREW MANIFEST
               </p>
               <div className="space-y-2">
-                {node.contributors.map((c) => (
+                {node.contributors.map((c, i) => (
                   <a
                     key={c.login}
                     href={`https://github.com/${c.login}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors group"
+                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/10 transition-colors group"
                   >
-                    <img
-                      src={c.avatarUrl}
-                      alt={`${c.login}'s avatar`}
-                      className="w-7 h-7 rounded-full border border-border"
-                      crossOrigin="anonymous"
-                    />
-                    <span className="text-sm text-foreground group-hover:text-accent transition-colors">
+                    <span className="text-[10px] font-mono text-muted-foreground w-4">
+                      {(i + 1).toString().padStart(2, "0")}
+                    </span>
+                    <div className="relative">
+                      <img
+                        src={c.avatarUrl}
+                        alt={`${c.login}`}
+                        className="w-8 h-8 rounded-full border border-border"
+                        crossOrigin="anonymous"
+                      />
+                      <div
+                        className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border border-background"
+                        style={{ backgroundColor: colors.main }}
+                      />
+                    </div>
+                    <span className="text-sm font-mono text-foreground group-hover:text-accent transition-colors">
                       {c.login}
                     </span>
-                    <span className="ml-auto text-xs text-muted-foreground font-mono">
-                      {c.contributions.toLocaleString()} commits
+                    <span className="ml-auto text-[10px] font-mono text-muted-foreground">
+                      {c.contributions} COMMITS
                     </span>
                   </a>
                 ))}
@@ -212,31 +237,36 @@ export default function NodeDetailPanel({
           {node.contributors.length > 0 && node.category !== "core" && (
             <button
               onClick={() => onExpand(node)}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg border border-border text-sm text-muted-foreground hover:text-foreground hover:border-accent/50 transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-mono tracking-wider transition-all border"
+              style={{
+                borderColor: isExpanded ? colors.main + "60" : "rgba(56, 189, 248, 0.2)",
+                backgroundColor: isExpanded ? colors.main + "10" : "transparent",
+                color: isExpanded ? colors.main : "#7dd3fc",
+              }}
             >
-              <Users size={14} />
-              {isExpanded
-                ? "Collapse contributors"
-                : "Expand contributors on graph"}
+              <Orbit size={14} />
+              {isExpanded ? "COLLAPSE CREW ORBITS" : "DEPLOY CREW TO ORBIT"}
             </button>
           )}
         </div>
 
-        {/* Footer link */}
+        {/* Footer */}
         <div className="p-4 border-t border-border">
           <a
             href={`https://github.com/${node.fullName}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-medium transition-colors"
+            className="flex items-center justify-center gap-2 w-full py-3 rounded-lg text-sm font-mono font-medium tracking-wider transition-all"
             style={{
-              backgroundColor: color + "1a",
-              color,
-              border: `1px solid ${color}33`,
+              background: `linear-gradient(135deg, ${colors.main}20, ${colors.glow}10)`,
+              color: colors.main,
+              border: `1px solid ${colors.main}40`,
+              boxShadow: `0 0 30px ${colors.main}10`,
             }}
           >
-            View on GitHub
-            <ExternalLink size={14} />
+            <Radio size={14} />
+            OPEN TRANSMISSION LINK
+            <ExternalLink size={12} />
           </a>
         </div>
       </div>
@@ -256,14 +286,28 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="rounded-lg bg-muted/50 border border-border p-3">
+    <div className="hud-panel rounded-lg p-3 relative">
+      <div className="hud-corner hud-corner-tl" />
+      <div className="hud-corner hud-corner-tr" />
+      <div className="hud-corner hud-corner-bl" />
+      <div className="hud-corner hud-corner-br" />
+      
       <div className="flex items-center gap-1.5 mb-1">
         <span style={{ color }}>{icon}</span>
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+        <span className="text-[9px] font-mono tracking-[0.15em] text-muted-foreground">
           {label}
         </span>
       </div>
-      <p className="text-lg font-bold text-foreground">{value}</p>
+      <p className="text-lg font-bold font-mono text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function MetaRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between text-sm font-mono">
+      <span className="text-muted-foreground text-xs tracking-wider">{label}</span>
+      <span className="text-foreground">{value}</span>
     </div>
   );
 }
@@ -272,9 +316,9 @@ function getTimeSince(dateStr: string): string {
   const now = Date.now();
   const then = new Date(dateStr).getTime();
   const days = Math.floor((now - then) / (1000 * 60 * 60 * 24));
-  if (days === 0) return "today";
-  if (days === 1) return "yesterday";
-  if (days < 30) return `${days}d ago`;
-  if (days < 365) return `${Math.floor(days / 30)}mo ago`;
-  return `${Math.floor(days / 365)}y ago`;
+  if (days === 0) return "TODAY";
+  if (days === 1) return "1 CYCLE AGO";
+  if (days < 30) return `${days} CYCLES AGO`;
+  if (days < 365) return `${Math.floor(days / 30)} MONTHS AGO`;
+  return `${Math.floor(days / 365)} YEARS AGO`;
 }

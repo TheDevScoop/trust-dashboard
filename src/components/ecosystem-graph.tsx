@@ -4,18 +4,19 @@ import { useEffect, useRef, useCallback, useState } from "react";
 import * as d3 from "d3";
 import type { EcosystemNode, EcosystemEdge, EcosystemData } from "@/lib/ecosystem-types";
 
-const CATEGORY_COLORS: Record<string, string> = {
-  core: "#22d3ee",
-  "official-tool": "#3b82f6",
-  plugin: "#a78bfa",
-  community: "#34d399",
-  documentation: "#fbbf24",
+// Galaxy color palette - celestial body colors
+const STAR_COLORS: Record<string, { main: string; glow: string; corona: string }> = {
+  core: { main: "#fef08a", glow: "#fbbf24", corona: "#f97316" },
+  "official-tool": { main: "#38bdf8", glow: "#0ea5e9", corona: "#0284c7" },
+  plugin: { main: "#c084fc", glow: "#a855f7", corona: "#7c3aed" },
+  community: { main: "#4ade80", glow: "#22c55e", corona: "#16a34a" },
+  documentation: { main: "#fb923c", glow: "#f97316", corona: "#ea580c" },
 };
 
-function nodeRadius(node: EcosystemNode): number {
-  if (node.category === "core") return 40;
-  const base = Math.log2(Math.max(node.stars, 1) + 1) * 3;
-  return Math.max(6, Math.min(base, 28));
+function starRadius(node: EcosystemNode): number {
+  if (node.category === "core") return 50;
+  const base = Math.log2(Math.max(node.stars, 1) + 1) * 3.5;
+  return Math.max(4, Math.min(base, 32));
 }
 
 interface SimNode extends EcosystemNode {
@@ -79,79 +80,70 @@ export default function EcosystemGraph({
 
     svg.selectAll("*").remove();
 
-    // Background radial gradient
     const defs = svg.append("defs");
-    const radialGrad = defs
-      .append("radialGradient")
-      .attr("id", "bg-gradient")
-      .attr("cx", "50%")
-      .attr("cy", "50%")
-      .attr("r", "50%");
-    radialGrad
-      .append("stop")
-      .attr("offset", "0%")
-      .attr("stop-color", "#0c1a2e")
-      .attr("stop-opacity", 0.8);
-    radialGrad
-      .append("stop")
-      .attr("offset", "100%")
-      .attr("stop-color", "#06060b")
-      .attr("stop-opacity", 1);
 
-    // Glow filters for each category
-    Object.entries(CATEGORY_COLORS).forEach(([cat, color]) => {
+    // Create radial gradients and glow filters for each category
+    Object.entries(STAR_COLORS).forEach(([cat, colors]) => {
+      // Star body gradient
+      const starGrad = defs
+        .append("radialGradient")
+        .attr("id", `star-grad-${cat}`)
+        .attr("cx", "30%")
+        .attr("cy", "30%");
+      starGrad.append("stop").attr("offset", "0%").attr("stop-color", "#ffffff").attr("stop-opacity", 0.9);
+      starGrad.append("stop").attr("offset", "40%").attr("stop-color", colors.main);
+      starGrad.append("stop").attr("offset", "100%").attr("stop-color", colors.glow);
+
+      // Corona glow filter
       const filter = defs
         .append("filter")
         .attr("id", `glow-${cat}`)
-        .attr("x", "-50%")
-        .attr("y", "-50%")
-        .attr("width", "200%")
-        .attr("height", "200%");
-      filter
-        .append("feGaussianBlur")
-        .attr("stdDeviation", cat === "core" ? 6 : 3)
-        .attr("result", "blur");
-      filter
-        .append("feFlood")
-        .attr("flood-color", color)
-        .attr("flood-opacity", cat === "core" ? 0.6 : 0.3);
-      filter
-        .append("feComposite")
-        .attr("in2", "blur")
-        .attr("operator", "in");
-      const merge = filter.append("feMerge");
-      merge.append("feMergeNode");
-      merge.append("feMergeNode").attr("in", "SourceGraphic");
+        .attr("x", "-100%")
+        .attr("y", "-100%")
+        .attr("width", "300%")
+        .attr("height", "300%");
+
+      filter.append("feGaussianBlur")
+        .attr("stdDeviation", cat === "core" ? 15 : 6)
+        .attr("result", "blur1");
+      filter.append("feGaussianBlur")
+        .attr("in", "SourceGraphic")
+        .attr("stdDeviation", cat === "core" ? 8 : 3)
+        .attr("result", "blur2");
+
+      const feMerge = filter.append("feMerge");
+      feMerge.append("feMergeNode").attr("in", "blur1");
+      feMerge.append("feMergeNode").attr("in", "blur2");
+      feMerge.append("feMergeNode").attr("in", "SourceGraphic");
     });
 
-    svg
-      .append("rect")
-      .attr("width", width)
-      .attr("height", height)
-      .attr("fill", "url(#bg-gradient)");
+    // Energy connection gradient
+    const connGrad = defs
+      .append("linearGradient")
+      .attr("id", "connection-gradient")
+      .attr("gradientUnits", "userSpaceOnUse");
+    connGrad.append("stop").attr("offset", "0%").attr("stop-color", "#38bdf8").attr("stop-opacity", 0.6);
+    connGrad.append("stop").attr("offset", "50%").attr("stop-color", "#c084fc").attr("stop-opacity", 0.3);
+    connGrad.append("stop").attr("offset", "100%").attr("stop-color", "#38bdf8").attr("stop-opacity", 0.6);
 
-    // Concentric reference rings
-    const ringGroup = svg.append("g").attr("class", "rings");
-    [0.2, 0.4, 0.6, 0.8].forEach((pct) => {
-      const r = Math.min(width, height) * pct * 0.45;
-      ringGroup
-        .append("circle")
-        .attr("cx", centerX)
-        .attr("cy", centerY)
-        .attr("r", r)
-        .attr("fill", "none")
-        .attr("stroke", "#1e293b")
-        .attr("stroke-width", 0.5)
-        .attr("stroke-dasharray", "2,4")
-        .attr("opacity", 0.4);
-    });
+    // Orbital ring pattern
+    const orbitPattern = defs.append("pattern")
+      .attr("id", "orbit-pattern")
+      .attr("patternUnits", "userSpaceOnUse")
+      .attr("width", 10)
+      .attr("height", 10);
+    orbitPattern.append("circle")
+      .attr("cx", 5)
+      .attr("cy", 5)
+      .attr("r", 0.5)
+      .attr("fill", "rgba(56, 189, 248, 0.3)");
 
     const { nodes: filteredNodes, edges: filteredEdges } = getFilteredData();
 
     const simNodes: SimNode[] = filteredNodes.map((n) => ({
       ...n,
-      x: centerX + (Math.random() - 0.5) * 100,
-      y: centerY + (Math.random() - 0.5) * 100,
+      x: centerX + (Math.random() - 0.5) * 200,
+      y: centerY + (Math.random() - 0.5) * 200,
       vx: 0,
       vy: 0,
     }));
@@ -167,156 +159,173 @@ export default function EcosystemGraph({
       }))
       .filter((e) => e.source && e.target);
 
-    // Container for zoom/pan
-    const container = svg.append("g").attr("class", "graph-container");
+    // Main container for zoom/pan
+    const container = svg.append("g").attr("class", "galaxy-container");
 
-    // Edges
-    const edgeGroup = container.append("g").attr("class", "edges");
+    // Orbital rings (decorative)
+    const orbitGroup = container.append("g").attr("class", "orbits");
+    [0.15, 0.3, 0.45, 0.6, 0.75, 0.9].forEach((pct, i) => {
+      const r = Math.min(width, height) * pct * 0.48;
+      orbitGroup
+        .append("circle")
+        .attr("cx", centerX)
+        .attr("cy", centerY)
+        .attr("r", r)
+        .attr("fill", "none")
+        .attr("stroke", "rgba(56, 189, 248, 0.08)")
+        .attr("stroke-width", 1)
+        .attr("stroke-dasharray", i % 2 === 0 ? "4,8" : "2,6")
+        .attr("class", "animate-orbit-pulse")
+        .style("animation-delay", `${i * 0.5}s`);
+    });
+
+    // Energy connections (edges)
+    const edgeGroup = container.append("g").attr("class", "connections");
     const edgeLines = edgeGroup
       .selectAll<SVGLineElement, SimEdge>("line")
       .data(simEdges)
       .join("line")
-      .attr("stroke", "#334155")
-      .attr("stroke-width", (d) => Math.max(0.3, d.strength * 2))
-      .attr("stroke-opacity", (d) => Math.max(0.05, d.strength * 0.3));
+      .attr("stroke", "url(#connection-gradient)")
+      .attr("stroke-width", (d) => Math.max(0.5, d.strength * 2.5))
+      .attr("stroke-opacity", (d) => Math.max(0.02, d.strength * 0.15))
+      .attr("stroke-linecap", "round");
 
-    // Node groups
-    const nodeGroup = container.append("g").attr("class", "nodes");
+    // Node groups (stars/planets)
+    const nodeGroup = container.append("g").attr("class", "celestial-bodies");
     const nodeGroups = nodeGroup
       .selectAll<SVGGElement, SimNode>("g")
       .data(simNodes, (d) => d.id)
       .join("g")
-      .attr("cursor", "pointer");
+      .attr("cursor", "pointer")
+      .attr("class", (d) => d.category === "core" ? "animate-core-pulse" : "");
 
-    // Node circles
+    // Corona (outer glow) for larger stars
+    nodeGroups
+      .filter((d) => starRadius(d) > 12 || d.category === "core")
+      .append("circle")
+      .attr("r", (d) => starRadius(d) * 2.5)
+      .attr("fill", (d) => {
+        const colors = STAR_COLORS[d.category] || STAR_COLORS.community;
+        return colors.corona;
+      })
+      .attr("opacity", (d) => d.category === "core" ? 0.15 : 0.08);
+
+    // Main star body
     nodeGroups
       .append("circle")
-      .attr("r", (d) => nodeRadius(d))
-      .attr("fill", (d) => {
-        const color = CATEGORY_COLORS[d.category] || "#64748b";
-        return d.category === "core" ? color : color + "cc";
-      })
-      .attr("stroke", (d) => CATEGORY_COLORS[d.category] || "#64748b")
-      .attr("stroke-width", (d) => (d.category === "core" ? 2 : 1))
+      .attr("r", (d) => starRadius(d))
+      .attr("fill", (d) => `url(#star-grad-${d.category})`)
       .attr("filter", (d) => `url(#glow-${d.category})`);
 
-    // Labels (only for larger nodes)
+    // Inner bright core
     nodeGroups
-      .filter((d) => nodeRadius(d) > 10 || d.category === "core")
+      .filter((d) => starRadius(d) > 8)
+      .append("circle")
+      .attr("r", (d) => starRadius(d) * 0.3)
+      .attr("fill", "#ffffff")
+      .attr("opacity", 0.8);
+
+    // Labels
+    nodeGroups
+      .filter((d) => starRadius(d) > 12 || d.category === "core")
       .append("text")
       .text((d) => {
-        if (d.category === "core") return "elizaOS";
+        if (d.category === "core") return "ELIZA PRIME";
         const name = d.name.replace(/^plugin-/, "").replace(/^eliza-/, "");
-        return name.length > 16 ? name.substring(0, 14) + ".." : name;
+        return name.length > 18 ? name.substring(0, 16) + ".." : name;
       })
       .attr("text-anchor", "middle")
-      .attr("dy", (d) => nodeRadius(d) + 14)
-      .attr("fill", "#94a3b8")
-      .attr("font-size", (d) => (d.category === "core" ? 14 : 10))
-      .attr("font-weight", (d) => (d.category === "core" ? 700 : 400))
-      .attr("pointer-events", "none");
+      .attr("dy", (d) => starRadius(d) + 18)
+      .attr("fill", (d) => STAR_COLORS[d.category]?.main || "#7dd3fc")
+      .attr("font-size", (d) => d.category === "core" ? 14 : 10)
+      .attr("font-weight", (d) => d.category === "core" ? 700 : 500)
+      .attr("font-family", "var(--font-mono)")
+      .attr("letter-spacing", "0.1em")
+      .attr("pointer-events", "none")
+      .attr("opacity", 0.9);
 
-    // Expanded contributor sub-nodes
+    // Expanded contributors as moons
     nodeGroups.each(function (d) {
       if (!expandedNodes.has(d.id) || !d.contributors.length) return;
       const g = d3.select(this);
-      const contribs = d.contributors.slice(0, 5);
-      const parentR = nodeRadius(d);
+      const contribs = d.contributors.slice(0, 6);
+      const parentR = starRadius(d);
 
       contribs.forEach((c, i) => {
         const angle = (i / contribs.length) * Math.PI * 2 - Math.PI / 2;
-        const orbitR = parentR + 22;
+        const orbitR = parentR + 30 + (i % 2) * 8;
         const cx = Math.cos(angle) * orbitR;
         const cy = Math.sin(angle) * orbitR;
 
+        // Moon orbit ring
+        g.append("circle")
+          .attr("cx", 0)
+          .attr("cy", 0)
+          .attr("r", orbitR)
+          .attr("fill", "none")
+          .attr("stroke", STAR_COLORS[d.category]?.main || "#7dd3fc")
+          .attr("stroke-width", 0.5)
+          .attr("stroke-opacity", 0.2)
+          .attr("stroke-dasharray", "2,4");
+
+        // Moon body
         g.append("circle")
           .attr("cx", cx)
           .attr("cy", cy)
-          .attr("r", 8)
-          .attr("fill", "#1e293b")
-          .attr("stroke", CATEGORY_COLORS[d.category] || "#64748b")
-          .attr("stroke-width", 1)
-          .attr("stroke-opacity", 0.6);
+          .attr("r", 10)
+          .attr("fill", "#0f172a")
+          .attr("stroke", STAR_COLORS[d.category]?.main || "#7dd3fc")
+          .attr("stroke-width", 1);
 
+        // Avatar clip
         g.append("clipPath")
           .attr("id", `clip-${d.id}-${c.login}`)
           .append("circle")
           .attr("cx", cx)
           .attr("cy", cy)
-          .attr("r", 7);
+          .attr("r", 9);
 
         g.append("image")
           .attr("href", c.avatarUrl)
-          .attr("x", cx - 7)
-          .attr("y", cy - 7)
-          .attr("width", 14)
-          .attr("height", 14)
+          .attr("x", cx - 9)
+          .attr("y", cy - 9)
+          .attr("width", 18)
+          .attr("height", 18)
           .attr("clip-path", `url(#clip-${d.id}-${c.login})`)
           .attr("crossOrigin", "anonymous");
-
-        g.append("text")
-          .text(c.login.substring(0, 8))
-          .attr("x", cx)
-          .attr("y", cy + 16)
-          .attr("text-anchor", "middle")
-          .attr("fill", "#64748b")
-          .attr("font-size", 7)
-          .attr("pointer-events", "none");
       });
     });
 
     // Force simulation
-    const maxExtent = Math.min(width, height) * 0.42;
+    const maxExtent = Math.min(width, height) * 0.44;
 
     const simulation = d3
       .forceSimulation<SimNode>(simNodes)
-      .force(
-        "center",
-        d3.forceCenter<SimNode>(centerX, centerY).strength(0.05)
+      .force("center", d3.forceCenter<SimNode>(centerX, centerY).strength(0.03))
+      .force("charge", d3.forceManyBody<SimNode>().strength((d) =>
+        d.category === "core" ? -800 : -40 - starRadius(d) * 4
+      ))
+      .force("collision", d3.forceCollide<SimNode>()
+        .radius((d) => starRadius(d) + (expandedNodes.has(d.id) ? 50 : 6))
+        .strength(0.85)
       )
-      .force(
-        "charge",
-        d3.forceManyBody<SimNode>().strength((d) =>
-          d.category === "core" ? -400 : -30 - nodeRadius(d) * 3
+      .force("radial", d3.forceRadial<SimNode>(
+        (d) => {
+          if (d.category === "core") return 0;
+          return maxExtent * (1 - d.couplingScore / 100) * 0.95 + 60;
+        },
+        centerX,
+        centerY
+      ).strength((d) => d.category === "core" ? 1 : 0.65))
+      .force("link", d3.forceLink<SimNode, SimEdge>(simEdges)
+        .id((d) => d.id)
+        .strength((d) => d.strength * 0.08)
+        .distance((d) =>
+          maxExtent * (2 - (d.source as SimNode).couplingScore / 100 - (d.target as SimNode).couplingScore / 100) * 0.25 + 80
         )
       )
-      .force(
-        "collision",
-        d3
-          .forceCollide<SimNode>()
-          .radius((d) => nodeRadius(d) + (expandedNodes.has(d.id) ? 35 : 4))
-          .strength(0.8)
-      )
-      .force(
-        "radial",
-        d3
-          .forceRadial<SimNode>(
-            (d) => {
-              if (d.category === "core") return 0;
-              // Invert coupling: high coupling = close to center
-              return maxExtent * (1 - d.couplingScore / 100) * 0.95 + 40;
-            },
-            centerX,
-            centerY
-          )
-          .strength((d) => (d.category === "core" ? 1 : 0.6))
-      )
-      .force(
-        "link",
-        d3
-          .forceLink<SimNode, SimEdge>(simEdges)
-          .id((d) => d.id)
-          .strength((d) => d.strength * 0.1)
-          .distance(
-            (d) =>
-              maxExtent *
-              (2 - (d.source as SimNode).couplingScore / 100 - (d.target as SimNode).couplingScore / 100) *
-              0.3 +
-              60
-          )
-      )
-      .alphaDecay(0.02)
-      .velocityDecay(0.3)
+      .alphaDecay(0.015)
+      .velocityDecay(0.35)
       .on("tick", () => {
         edgeLines
           .attr("x1", (d) => d.source.x)
@@ -355,63 +364,56 @@ export default function EcosystemGraph({
         const [x, y] = d3.pointer(event, svgRef.current);
         setTooltip({ node: d, x, y });
 
-        // Highlight connected edges
+        // Highlight connections
         edgeLines
           .attr("stroke-opacity", (e) =>
             e.source.id === d.id || e.target.id === d.id
-              ? Math.max(0.4, e.strength * 0.8)
-              : 0.03
+              ? Math.max(0.5, e.strength * 0.8)
+              : 0.02
           )
-          .attr("stroke", (e) =>
+          .attr("stroke-width", (e) =>
             e.source.id === d.id || e.target.id === d.id
-              ? CATEGORY_COLORS[d.category] || "#64748b"
-              : "#334155"
+              ? Math.max(1.5, e.strength * 4)
+              : Math.max(0.5, e.strength * 2.5)
           );
 
-        // Dim non-connected nodes
-        nodeGroups.select("circle").attr("opacity", (n) => {
+        // Dim unconnected nodes
+        nodeGroups.attr("opacity", (n) => {
           if (n.id === d.id) return 1;
           const connected = simEdges.some(
             (e) =>
               (e.source.id === d.id && e.target.id === n.id) ||
               (e.target.id === d.id && e.source.id === n.id)
           );
-          return connected ? 1 : 0.2;
+          return connected ? 1 : 0.15;
         });
       })
       .on("mouseleave", () => {
         setTooltip(null);
         edgeLines
-          .attr("stroke-opacity", (d) => Math.max(0.05, d.strength * 0.3))
-          .attr("stroke", "#334155");
-        nodeGroups.select("circle").attr("opacity", 1);
+          .attr("stroke-opacity", (d) => Math.max(0.02, d.strength * 0.15))
+          .attr("stroke-width", (d) => Math.max(0.5, d.strength * 2.5));
+        nodeGroups.attr("opacity", 1);
       })
-      .on("click", (_event, d) => {
-        onNodeClick(d);
-      })
-      .on("dblclick", (_event, d) => {
-        onNodeDoubleClick(d);
-      });
+      .on("click", (_event, d) => onNodeClick(d))
+      .on("dblclick", (_event, d) => onNodeDoubleClick(d));
 
     // Zoom behavior
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.15, 5])
+      .scaleExtent([0.1, 6])
       .on("zoom", (event) => {
         container.attr("transform", event.transform);
       });
 
     svg.call(zoom);
 
-    // Initial gentle zoom to fit
-    const initialScale = 0.85;
+    // Initial zoom
+    const initialScale = 0.8;
     svg.call(
       zoom.transform,
       d3.zoomIdentity
-        .translate(
-          (width * (1 - initialScale)) / 2,
-          (height * (1 - initialScale)) / 2
-        )
+        .translate((width * (1 - initialScale)) / 2, (height * (1 - initialScale)) / 2)
         .scale(initialScale)
     );
 
@@ -420,17 +422,16 @@ export default function EcosystemGraph({
     };
   }, [data, getFilteredData, expandedNodes, onNodeClick, onNodeDoubleClick]);
 
-  // Highlight search matches
+  // Search highlight effect
   useEffect(() => {
     if (!svgRef.current) return;
     const svg = d3.select(svgRef.current);
     const query = searchQuery.toLowerCase().trim();
 
-    svg.selectAll<SVGGElement, SimNode>(".nodes g").each(function (d) {
+    svg.selectAll<SVGGElement, SimNode>(".celestial-bodies g").each(function (d) {
       const g = d3.select(this);
       if (!query) {
-        g.select("circle").attr("opacity", 1);
-        g.select("text").attr("opacity", 1);
+        g.attr("opacity", 1);
         return;
       }
 
@@ -439,42 +440,46 @@ export default function EcosystemGraph({
         (d.description || "").toLowerCase().includes(query) ||
         d.topics.some((t) => t.toLowerCase().includes(query));
 
-      g.select("circle").attr("opacity", match ? 1 : 0.1);
-      g.select("text").attr("opacity", match ? 1 : 0.1);
+      g.attr("opacity", match ? 1 : 0.08);
     });
   }, [searchQuery]);
 
   return (
     <div className="relative w-full h-full">
-      <svg
-        ref={svgRef}
-        className="w-full h-full"
-        style={{ background: "transparent" }}
-      />
+      <svg ref={svgRef} className="w-full h-full" style={{ background: "transparent" }} />
+      
+      {/* Tooltip */}
       {tooltip && (
         <div
           className="pointer-events-none absolute z-50 animate-fade-in"
           style={{
-            left: Math.min(tooltip.x + 12, (svgRef.current?.clientWidth || 800) - 260),
+            left: Math.min(tooltip.x + 16, (svgRef.current?.clientWidth || 800) - 280),
             top: tooltip.y - 10,
           }}
         >
-          <div className="rounded-lg border border-border bg-card/95 backdrop-blur-md px-3 py-2 shadow-xl max-w-[240px]">
-            <p className="font-semibold text-sm text-foreground truncate">
-              {tooltip.node.name}
+          <div className="hud-panel rounded-lg px-4 py-3 max-w-[260px] relative">
+            <div className="hud-corner hud-corner-tl" />
+            <div className="hud-corner hud-corner-tr" />
+            <div className="hud-corner hud-corner-bl" />
+            <div className="hud-corner hud-corner-br" />
+            
+            <p className="font-mono font-bold text-sm tracking-wide" style={{ color: STAR_COLORS[tooltip.node.category]?.main || "#7dd3fc" }}>
+              {tooltip.node.category === "core" ? "ELIZA PRIME" : tooltip.node.name.toUpperCase()}
             </p>
             {tooltip.node.description && (
-              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+              <p className="text-xs text-muted-foreground/80 mt-1.5 line-clamp-2 leading-relaxed">
                 {tooltip.node.description}
               </p>
             )}
-            <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
-              <span>
-                {"* "}
+            <div className="flex items-center gap-4 mt-2 text-xs font-mono text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="text-yellow-400">*</span>
                 {tooltip.node.stars.toLocaleString()}
               </span>
-              {tooltip.node.language && <span>{tooltip.node.language}</span>}
-              <span className="ml-auto font-mono text-[10px]" style={{ color: CATEGORY_COLORS[tooltip.node.category] }}>
+              {tooltip.node.language && (
+                <span className="opacity-70">{tooltip.node.language}</span>
+              )}
+              <span className="ml-auto font-bold" style={{ color: STAR_COLORS[tooltip.node.category]?.main }}>
                 {tooltip.node.couplingScore}
               </span>
             </div>
