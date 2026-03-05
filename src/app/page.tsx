@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import EcosystemGraph from "@/components/ecosystem-graph";
 import NodeDetailPanel from "@/components/node-detail-panel";
@@ -138,6 +139,14 @@ export default function HomePage() {
         <p>Drag nodes to rearrange. Scroll to zoom.</p>
         <p>Click a node for details. Double-click to expand contributors.</p>
       </div>
+
+      {/* 3D World link */}
+      <Link
+        href="/world"
+        className="absolute bottom-4 right-4 z-20 px-4 py-2 rounded-lg border border-accent/30 bg-card/80 backdrop-blur text-sm text-accent hover:border-accent hover:bg-accent/10 transition-all"
+      >
+        Enter 3D World
+      </Link>
     </div>
   );
 }
