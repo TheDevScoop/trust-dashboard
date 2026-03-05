@@ -12,7 +12,12 @@ const ALL_CATEGORIES = new Set([
   "core",
   "official-tool",
   "plugin",
+  "adapter",
+  "client",
+  "community-plugin",
   "community",
+  "game",
+  "infrastructure",
   "documentation",
 ]);
 

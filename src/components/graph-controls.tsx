@@ -6,7 +6,12 @@ const CATEGORIES = [
   { key: "core", label: "Core", color: "#22d3ee" },
   { key: "official-tool", label: "Official", color: "#3b82f6" },
   { key: "plugin", label: "Plugins", color: "#a78bfa" },
+  { key: "adapter", label: "Adapters", color: "#fb923c" },
+  { key: "client", label: "Clients", color: "#38bdf8" },
+  { key: "community-plugin", label: "Community Plugins", color: "#6ee7b7" },
   { key: "community", label: "Community", color: "#34d399" },
+  { key: "game", label: "Games", color: "#f472b6" },
+  { key: "infrastructure", label: "Infra", color: "#94a3b8" },
   { key: "documentation", label: "Docs", color: "#fbbf24" },
 ];
 
@@ -22,6 +27,8 @@ interface GraphControlsProps {
     fetchedAt: string;
     elizaOSRepoCount: number;
     pluginRepoCount: number;
+    communityRepoCount: number;
+    registryPluginCount: number;
   } | null;
   isLoading: boolean;
   onRefresh: () => void;
@@ -53,7 +60,13 @@ export default function GraphControls({
               <span className="text-border">|</span>
               <span>{meta.totalStars.toLocaleString()} stars</span>
               <span className="text-border">|</span>
-              <span>{meta.pluginRepoCount} plugins</span>
+              <span>{meta.pluginRepoCount + meta.communityRepoCount} plugins</span>
+              {meta.registryPluginCount > 0 && (
+                <>
+                  <span className="text-border">|</span>
+                  <span>{meta.registryPluginCount} in registry</span>
+                </>
+              )}
             </div>
           )}
         </div>

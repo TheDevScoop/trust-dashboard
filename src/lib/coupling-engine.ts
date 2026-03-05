@@ -19,20 +19,80 @@ const ELIZA_KEYWORDS = [
 
 function categorizeRepo(repo: GitHubRepo, orgName: string): NodeCategory {
   const name = repo.name.toLowerCase();
+  const desc = (repo.description || "").toLowerCase();
+  const topics = (repo.topics || []).map((t) => t.toLowerCase());
 
   if (orgName === "elizaOS" && name === CORE_REPO_NAME) return "core";
 
+  // Games
+  if (
+    name.includes("game") ||
+    name.includes("runner") ||
+    name.includes("2004scape") ||
+    name.includes("hyperfy") ||
+    name.includes("3d") ||
+    topics.includes("game") ||
+    desc.includes("game") ||
+    desc.includes("endless runner")
+  ) {
+    return "game";
+  }
+
+  // Documentation / websites
   if (
     name.includes("doc") ||
     name.includes("github.io") ||
     name.includes("website") ||
     name.includes("landing") ||
-    name.includes("awesome")
+    name.includes("awesome") ||
+    name.includes("knowledge") ||
+    name === "elizas-list"
   ) {
     return "documentation";
   }
 
-  if (orgName === "elizaos-plugins" || name.startsWith("plugin-")) return "plugin";
+  // Adapters
+  if (name.startsWith("adapter-") || name.includes("adapter")) {
+    return "adapter";
+  }
+
+  // Clients
+  if (name.startsWith("client-")) {
+    return "client";
+  }
+
+  // Infrastructure tools
+  if (
+    name.includes("benchmark") ||
+    name.includes("config") ||
+    name.includes("runtime") ||
+    name.includes("script") ||
+    name.includes("workgroup") ||
+    name.includes("prr") ||
+    name.includes("otc-agent") ||
+    name === "examples" ||
+    name.includes("starter") ||
+    name.includes("template") ||
+    name.includes("characterfile")
+  ) {
+    return "infrastructure";
+  }
+
+  // Official plugins (from elizaos-plugins org)
+  if (orgName === "elizaos-plugins" || (orgName === "elizaOS" && name.startsWith("plugin-"))) {
+    return "plugin";
+  }
+
+  // Community plugins (third-party orgs with plugin- prefix or elizaos-plugin topic)
+  if (
+    orgName !== "elizaOS" &&
+    orgName !== "elizaos-plugins" &&
+    (name.startsWith("plugin-") || topics.includes("elizaos-plugin"))
+  ) {
+    return "community-plugin";
+  }
+
+  // Remaining official org repos
   if (orgName === "elizaOS") return "official-tool";
 
   return "community";
@@ -87,26 +147,23 @@ function calcForkRelationship(repo: GitHubRepo): number {
   return repo.fork ? 60 : 0;
 }
 
-// Heuristic-based dependency coupling (no API calls needed)
 function calcDependencyCouplingHeuristic(repo: GitHubRepo): number {
   const name = repo.name.toLowerCase();
   const desc = (repo.description || "").toLowerCase();
 
   let score = 0;
 
-  // Plugin repos almost certainly depend on @elizaos/core
   if (name.startsWith("plugin-")) score += 40;
-
-  // Name patterns suggesting tight coupling
+  if (name.startsWith("adapter-")) score += 35;
+  if (name.startsWith("client-")) score += 35;
   if (name.includes("eliza-") || name.includes("-eliza")) score += 30;
   if (name === "eliza" || name === "elizaos") score += 100;
 
-  // Description hints
   if (desc.includes("@elizaos/") || desc.includes("@ai16z/")) score += 30;
   if (desc.includes("plugin for eliza") || desc.includes("elizaos plugin")) score += 25;
   if (desc.includes("eliza agent") || desc.includes("elizaos agent")) score += 20;
+  if (desc.includes("eliza os") || desc.includes("eliza framework")) score += 20;
 
-  // Starter/template repos are tightly coupled
   if (name.includes("starter") || name.includes("template")) score += 25;
 
   return Math.min(score, 100);
@@ -191,24 +248,36 @@ function buildEdges(nodes: EcosystemNode[]): EcosystemEdge[] {
 
 export async function buildEcosystemData(
   elizaOSRepos: GitHubRepo[],
-  pluginRepos: GitHubRepo[]
+  pluginRepos: GitHubRepo[],
+  communityRepos: GitHubRepo[] = [],
+  registryPluginCount = 0
 ): Promise<EcosystemData> {
   console.log(
-    `[coupling-engine] Building ecosystem data from ${elizaOSRepos.length} + ${pluginRepos.length} repos`
+    `[coupling-engine] Building ecosystem data from ${elizaOSRepos.length} + ${pluginRepos.length} + ${communityRepos.length} repos`
   );
 
   const allRepos = [
     ...elizaOSRepos.map((r) => ({ repo: r, org: "elizaOS" })),
     ...pluginRepos.map((r) => ({ repo: r, org: "elizaos-plugins" })),
+    ...communityRepos.map((r) => ({ repo: r, org: r.owner?.login || "community" })),
   ];
 
+  // Deduplicate by full_name
+  const seen = new Set<string>();
+  const deduped = allRepos.filter(({ repo }) => {
+    const key = repo.full_name.toLowerCase();
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   const maxStars = Math.max(
-    ...allRepos.map((r) => r.repo.stargazers_count),
+    ...deduped.map((r) => r.repo.stargazers_count),
     1
   );
-  const maxForks = Math.max(...allRepos.map((r) => r.repo.forks_count), 1);
+  const maxForks = Math.max(...deduped.map((r) => r.repo.forks_count), 1);
 
-  const nodes: EcosystemNode[] = allRepos.map(({ repo, org }) => ({
+  const nodes: EcosystemNode[] = deduped.map(({ repo, org }) => ({
     id: repo.full_name,
     name: repo.name,
     fullName: repo.full_name,
@@ -233,11 +302,11 @@ export async function buildEcosystemData(
 
   const edges = buildEdges(nodes);
 
-  const totalStars = allRepos.reduce(
+  const totalStars = deduped.reduce(
     (sum, { repo }) => sum + repo.stargazers_count,
     0
   );
-  const totalForks = allRepos.reduce(
+  const totalForks = deduped.reduce(
     (sum, { repo }) => sum + repo.forks_count,
     0
   );
@@ -250,12 +319,14 @@ export async function buildEcosystemData(
     nodes,
     edges,
     meta: {
-      totalRepos: allRepos.length,
+      totalRepos: deduped.length,
       totalStars,
       totalForks,
       fetchedAt: new Date().toISOString(),
       elizaOSRepoCount: elizaOSRepos.length,
       pluginRepoCount: pluginRepos.length,
+      communityRepoCount: communityRepos.length,
+      registryPluginCount,
     },
   };
 }

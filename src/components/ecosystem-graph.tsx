@@ -15,6 +15,11 @@ const CATEGORY_COLORS: Record<string, string> = {
   plugin: "#a78bfa",
   community: "#34d399",
   documentation: "#fbbf24",
+  game: "#f472b6",
+  adapter: "#fb923c",
+  client: "#38bdf8",
+  infrastructure: "#94a3b8",
+  "community-plugin": "#6ee7b7",
 };
 
 const DPR = typeof window !== "undefined" ? Math.min(window.devicePixelRatio || 1, 2) : 1;
