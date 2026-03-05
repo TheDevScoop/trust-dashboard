@@ -9,7 +9,7 @@ import {
 } from "@/lib/arcade-data";
 
 type SortKey = "score" | "activity" | "community" | "quality" | "adoption" | "maintenance";
-type FilterOrg = "all" | "elizaOS" | "elizaos-plugins" | "milady-ai";
+type FilterOrg = "all" | "elizaOS" | "elizaos-plugins" | "milady-ai" | "HyperscapeAI";
 type FilterCategory = "all" | "official-tool" | "plugin" | "documentation" | "community" | "game" | "infrastructure";
 
 export default function RepoScorecard() {
@@ -65,7 +65,7 @@ export default function RepoScorecard() {
       <div className="sc-filters">
         <div className="sc-filter-group">
           <span className="sc-filter-label">ORG</span>
-          {(["all", "elizaOS", "elizaos-plugins", "milady-ai"] as FilterOrg[]).map((o) => (
+          {(["all", "elizaOS", "elizaos-plugins", "milady-ai", "HyperscapeAI"] as FilterOrg[]).map((o) => (
             <button
               key={o}
               className={`sc-filter-btn ${filterOrg === o ? "sc-filter-active" : ""}`}

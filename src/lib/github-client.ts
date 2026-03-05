@@ -3,7 +3,7 @@ import type { GitHubRepo, GitHubContributor } from "./ecosystem-types";
 const GITHUB_API = "https://api.github.com";
 const ELIZAOS_ORG = "elizaOS";
 const PLUGINS_ORG = "elizaos-plugins";
-const ASSOCIATED_ORGS = ["milady-ai", "m3-org", "Agent-Town"];
+const ASSOCIATED_ORGS = ["milady-ai", "m3-org", "Agent-Town", "HyperscapeAI"];
 
 const REGISTRY_RAW_URL =
   "https://raw.githubusercontent.com/elizaos-plugins/registry/main/index.json";

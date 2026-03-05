@@ -93,6 +93,8 @@ function getSeedData(): {
     makeSeedRepo("elizaOS", "plugin-specification", "ElizaOS plugin specification", 1, 0, "TypeScript", ["plugin", "specification"]),
     makeSeedRepo("elizaOS", "test-repo", "Repo with simple issues to test swe-agent", 1, 0, "Python", ["testing"]),
     makeSeedRepo("elizaOS", "brandkit", "Assets, logos, and designs", 5, 2, "Markdown", ["brand", "design", "assets"]),
+    // auto.fun — Solana launchpad
+    makeSeedRepo("elizaOS", "auto.fun", "Open source Solana launchpad — no-code AI agent token launcher", 120, 35, "TypeScript", ["solana", "launchpad", "token", "defi", "auto-fun"]),
   ];
 
   // ─── elizaos-plugins org repos (268+ repos) ───
@@ -281,6 +283,14 @@ function getSeedData(): {
 
   // ─── Community & third-party repos (from topic search + registry) ───
   const communityRepos: GitHubRepo[] = [
+    // ─── HyperscapeAI org (MMORPG powered by ElizaOS) ───
+    makeSeedRepo("HyperscapeAI", "hyperscape", "MMORPG for humans and agents — RuneScape-inspired, powered by ElizaOS", 67, 37, "TypeScript", ["mmorpg", "game", "elizaos", "ai-agents", "hyperfy", "runescape"], { homepage: "https://hyperscapeai.github.io/hyperscape/" }),
+    makeSeedRepo("HyperscapeAI", "docs", "Hyperscape documentation", 2, 0, "MDX", ["docs", "game"]),
+    makeSeedRepo("HyperscapeAI", "assets", "Hyperscape game assets", 2, 3, "JavaScript", ["assets", "game"]),
+    makeSeedRepo("HyperscapeAI", "hyperscapeai.github.io", "Leaderboard of Hyperscape Contributors", 0, 48, "TypeScript", ["leaderboard", "game"]),
+    makeSeedRepo("HyperscapeAI", "plugin-hyperscape", "ElizaOS plugin for Hyperscape AI agents", 0, 1, "TypeScript", ["plugin", "game", "elizaos-plugin"]),
+    // ─── Babylon (prediction market MMO) ───
+    makeSeedRepo("babylon-market", "babylon", "Social prediction market game — humans and AI agents react to live events", 30, 10, "TypeScript", ["prediction-market", "game", "mmo", "elizaos", "ai-agents"], { homepage: "https://babylon.market/" }),
     // ─── milady-ai org (major associated project) ───
     makeSeedRepo("milady-ai", "milady", "terminally online — personal AI assistant built on elizaOS", 500, 80, "TypeScript", ["elizaos", "agent", "ai", "personal-assistant", "milady"], { homepage: "https://milady.ai/" }),
     makeSeedRepo("milady-ai", "trust-dashboard", "Trust scoring leaderboard and contributor analytics for milady", 15, 3, "TypeScript", ["trust", "leaderboard", "milady"]),

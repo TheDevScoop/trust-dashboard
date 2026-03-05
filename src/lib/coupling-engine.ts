@@ -17,6 +17,8 @@ const ELIZA_KEYWORDS = [
   "plugin",
   "milady",
   "milaidy",
+  "hyperscape",
+  "babylon",
 ];
 
 function categorizeRepo(repo: GitHubRepo, orgName: string): NodeCategory {
@@ -142,7 +144,7 @@ function calcCommunitySignal(
   return Math.min(starScore * 0.7 + forkScore * 0.3, 100);
 }
 
-const ASSOCIATED_ORGS = new Set(["milady-ai", "m3-org", "agent-town"]);
+const ASSOCIATED_ORGS = new Set(["milady-ai", "m3-org", "agent-town", "hyperscapeai"]);
 
 function calcOrgProximity(orgName: string): number {
   if (orgName === "elizaOS") return 80;

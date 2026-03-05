@@ -28,7 +28,7 @@ export interface ArcadeLevelNode {
   repo: string;
   displayName: string;
   description: string;
-  org: "elizaOS" | "elizaos-plugins" | "milady-ai" | "community";
+  org: "elizaOS" | "elizaos-plugins" | "milady-ai" | "HyperscapeAI" | "community";
   stars: number;
   category: "core" | "official-tool" | "plugin" | "documentation" | "community" | "game" | "infrastructure";
   /** Position on overworld map (grid coords) */
@@ -305,6 +305,10 @@ export const LEVEL_NODES: ArcadeLevelNode[] = [
   { repo: "mcp-gateway", displayName: "MCP GATEWAY", description: "Model Context Protocol gateway", org: "elizaOS", stars: 12, category: "infrastructure", x: 6, y: 8, connections: ["eliza", "plugin-mcp"], status: "active", sprite: "bridge" },
   { repo: "trust_scoreboard", displayName: "TRUST TOWER", description: "Trust scoring dashboard", org: "elizaOS", stars: 11, category: "infrastructure", x: 8, y: 8, connections: ["eliza", "elizaos.github.io"], status: "active", sprite: "tower" },
   { repo: "eliza-3d-hyperfy-starter", displayName: "3D HYPERWORLD", description: "3D MMO agent with Hyperfy", org: "elizaOS", stars: 41, category: "game", x: 14, y: 2, connections: ["eliza"], status: "active", sprite: "cave" },
+  // ── Games & Major Projects ─────────────────────────────────────────
+  { repo: "hyperscape", displayName: "HYPERSCAPE REALM", description: "MMORPG for humans & agents — RuneScape-inspired", org: "HyperscapeAI", stars: 67, category: "game", x: 3, y: 0, connections: ["eliza", "eliza-3d-hyperfy-starter", "plugin-node"], status: "cleared", sprite: "castle" },
+  { repo: "babylon", displayName: "BABYLON ARENA", description: "Prediction market MMO — humans vs AI agents", org: "community", stars: 30, category: "game", x: 11, y: 0, connections: ["eliza", "plugin-solana", "spartan"], status: "active", sprite: "fortress" },
+  { repo: "auto.fun", displayName: "AUTO.FUN FORGE", description: "No-code Solana AI agent launchpad", org: "elizaOS", stars: 120, category: "official-tool", x: 1, y: 6, connections: ["eliza", "plugin-solana"], status: "cleared", sprite: "fortress" },
 ];
 
 // ── Plugin power-ups on paths ───────────────────────────────────────
@@ -363,7 +367,7 @@ export type RepoGradeLetter = "S" | "A" | "B" | "C" | "D" | "F";
 export interface RepoGrade {
   repo: string;
   displayName: string;
-  org: "elizaOS" | "elizaos-plugins" | "milady-ai" | "community";
+  org: "elizaOS" | "elizaos-plugins" | "milady-ai" | "HyperscapeAI" | "community";
   category: "official-tool" | "plugin" | "documentation" | "community" | "game" | "infrastructure";
   overallGrade: RepoGradeLetter;
   overallScore: number; // 0-100
@@ -765,6 +769,21 @@ export const REPO_GRADES: RepoGrade[] = [
     { stars: 26, forks: 5, contributors: 3, openIssues: 1, lastCommitDaysAgo: 20, weeklyCommits: 0 },
     { activity: 18, community: 20, quality: 62, adoption: 35, maintenance: 25 },
     { activity: "Low activity recently", community: "3 contributors", quality: "Speech dataset generation", adoption: "26 stars", maintenance: "3 weeks stale" },
+  ),
+  makeRepoGrade("hyperscape", "HyperscapeAI MMORPG", "HyperscapeAI" as RepoGrade["org"], "game" as RepoGrade["category"],
+    { stars: 67, forks: 18, contributors: 8, openIssues: 12, lastCommitDaysAgo: 3, weeklyCommits: 14 },
+    { activity: 85, community: 55, quality: 72, adoption: 58, maintenance: 78 },
+    { activity: "14 commits/week, very active", community: "8 contributors, growing", quality: "Unreal Engine MMO with AI agents", adoption: "67 stars, unique concept", maintenance: "Active daily development" },
+  ),
+  makeRepoGrade("babylon", "Babylon Prediction MMO", "HyperscapeAI" as RepoGrade["org"], "game" as RepoGrade["category"],
+    { stars: 34, forks: 9, contributors: 5, openIssues: 7, lastCommitDaysAgo: 5, weeklyCommits: 8 },
+    { activity: 72, community: 40, quality: 68, adoption: 45, maintenance: 70 },
+    { activity: "8 commits/week", community: "5 contributors", quality: "Prediction market MMO game", adoption: "34 stars, novel mechanic", maintenance: "Regular updates" },
+  ),
+  makeRepoGrade("auto.fun", "Auto.fun Launchpad", "elizaOS", "infrastructure" as RepoGrade["category"],
+    { stars: 120, forks: 35, contributors: 12, openIssues: 15, lastCommitDaysAgo: 2, weeklyCommits: 20 },
+    { activity: 90, community: 65, quality: 80, adoption: 75, maintenance: 85 },
+    { activity: "20 commits/week, highly active", community: "12 contributors", quality: "Solana token launchpad platform", adoption: "120 stars, high usage", maintenance: "Continuously maintained" },
   ),
 ].sort((a, b) => b.overallScore - a.overallScore);
 
