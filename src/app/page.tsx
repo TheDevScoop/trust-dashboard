@@ -140,13 +140,21 @@ export default function HomePage() {
         <p>Click a node for details. Double-click to expand contributors.</p>
       </div>
 
-      {/* 3D World link */}
-      <Link
-        href="/world"
-        className="absolute bottom-4 right-4 z-20 px-4 py-2 rounded-lg border border-accent/30 bg-card/80 backdrop-blur text-sm text-accent hover:border-accent hover:bg-accent/10 transition-all"
-      >
-        Enter 3D World
-      </Link>
+      {/* Mode links */}
+      <div className="absolute bottom-4 right-4 z-20 flex gap-2">
+        <Link
+          href="/arcade"
+          className="px-4 py-2 rounded-lg border border-[#ff0040]/30 bg-card/80 backdrop-blur text-sm text-[#ff0040] hover:border-[#ff0040] hover:bg-[#ff0040]/10 transition-all font-mono"
+        >
+          ARCADE MODE
+        </Link>
+        <Link
+          href="/world"
+          className="px-4 py-2 rounded-lg border border-accent/30 bg-card/80 backdrop-blur text-sm text-accent hover:border-accent hover:bg-accent/10 transition-all"
+        >
+          Enter 3D World
+        </Link>
+      </div>
     </div>
   );
 }
