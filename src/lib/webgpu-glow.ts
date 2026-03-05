@@ -97,10 +97,10 @@ export async function initWebGPUGlow(width: number, height: number): Promise<Web
   device.queue.writeBuffer(dirBufH, 0, new Float32Array([1, 0]));
   device.queue.writeBuffer(dirBufV, 0, new Float32Array([0, 1]));
 
-  const module = device.createShaderModule({ code: BLUR_SHADER });
+  const shaderModule = device.createShaderModule({ code: BLUR_SHADER });
   const pipeline = device.createComputePipeline({
     layout: "auto",
-    compute: { module, entryPoint: "main" },
+    compute: { module: shaderModule, entryPoint: "main" },
   });
 
   const bgH = device.createBindGroup({

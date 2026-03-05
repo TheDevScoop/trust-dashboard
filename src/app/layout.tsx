@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const interFallback = {
+  className: "font-sans",
+};
 
 const siteTitle = "elizaOS Ecosystem Graph";
 const siteDescription =
@@ -34,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`dark ${inter.className}`}>
+    <html lang="en" className={`dark ${interFallback.className}`}>
       <body className="min-h-screen antialiased overflow-hidden">
         {children}
       </body>
