@@ -15,7 +15,18 @@ const ALL_CATEGORIES = new Set([
   "documentation",
 ]);
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const error = new Error("Failed to fetch ecosystem data");
+    throw error;
+  }
+  const data = await res.json();
+  if (data.error) {
+    throw new Error(data.error);
+  }
+  return data;
+};
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,6 +43,12 @@ export default function HomePage() {
   } = useSWR<EcosystemData>("/api/ecosystem", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
+    onSuccess: (data) => {
+      console.log("[v0] Ecosystem data loaded:", data.meta);
+    },
+    onError: (err) => {
+      console.error("[v0] Failed to load ecosystem data:", err);
+    },
   });
 
   const handleNodeClick = useCallback((node: EcosystemNode) => {

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { fetchAllEcosystemRepos } from "@/lib/github-client";
+import { fetchAllEcosystemRepos, fetchContributorsForRepos } from "@/lib/github-client";
 import { buildEcosystemData } from "@/lib/coupling-engine";
 import type { EcosystemData, GitHubRepo } from "@/lib/ecosystem-types";
 
 let cachedData: EcosystemData | null = null;
 let cachedAt = 0;
-const CACHE_TTL = 5 * 60 * 1000;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-// Comprehensive seed data so the graph always loads
+// Comprehensive seed data for fallback
 function makeSeedRepo(
   org: string,
   name: string,
@@ -43,90 +43,73 @@ function makeSeedRepo(
   };
 }
 
-function getSeedData(): { elizaOSRepos: GitHubRepo[]; pluginRepos: GitHubRepo[] } {
+function getSeedData(): { elizaOSRepos: GitHubRepo[]; pluginRepos: GitHubRepo[]; communityRepos: GitHubRepo[] } {
   const elizaOSRepos: GitHubRepo[] = [
-    makeSeedRepo("elizaOS", "eliza", "Autonomous agents for everyone", 17680, 5447, "TypeScript", ["agent", "agentic", "ai", "autonomous", "chatbot", "crypto", "discord", "eliza", "elizaos", "framework", "plugins", "rag", "slack", "swarm", "telegram"], { homepage: "https://eliza.how/" }),
+    makeSeedRepo("elizaOS", "eliza", "Autonomous agents for everyone", 17698, 5449, "TypeScript", 
+      ["agent", "agentic", "ai", "autonomous", "chatbot", "crypto", "discord", "eliza", "elizaos", "framework", "plugins", "rag", "slack", "swarm", "telegram"], 
+      { homepage: "https://eliza.how/" }),
     makeSeedRepo("elizaOS", "elizaos.github.io", "The elizaOS Website and Leaderboard", 45, 50, "TypeScript", ["elizaos", "website", "leaderboard"]),
-    makeSeedRepo("elizaOS", "eliza-starter", "Starter template for building Eliza agents", 240, 180, "TypeScript", ["eliza", "starter", "template", "agent"]),
-    makeSeedRepo("elizaOS", "characterfile", "A simple file format for character data", 320, 110, "TypeScript", ["character", "ai", "npc", "personality"]),
-    makeSeedRepo("elizaOS", "awesome-eliza", "A curated list of awesome things related to Eliza", 190, 40, "Markdown", ["awesome", "eliza", "list"]),
-    makeSeedRepo("elizaOS", "agentmemory", "Easy-to-use agent memory backed by chromadb + postgres", 90, 25, "Python", ["memory", "agent", "rag", "chromadb"]),
-    makeSeedRepo("elizaOS", "eliza-2004scape", "Eliza plays Runescape", 0, 0, "TypeScript", []),
-    makeSeedRepo("elizaOS", "openclaw-adapter", "Run Eliza plugins inside OpenClaw", 37, 7, "TypeScript", []),
-    makeSeedRepo("elizaOS", "benchmarks", "Benchmark suite for elizaOS agents", 5, 0, "Python", []),
-    makeSeedRepo("elizaOS", "examples", "Examples of how to use elizaOS", 4, 0, "TypeScript", []),
-    makeSeedRepo("elizaOS", "prr", "PR review and repo management agent", 3, 1, "TypeScript", []),
-    makeSeedRepo("elizaOS", "token-manager", "Token balance management for agents", 15, 5, "TypeScript", ["token", "agent", "crypto"]),
-    makeSeedRepo("elizaOS", "runtime-config", "Runtime configuration system for elizaOS", 8, 2, "TypeScript", ["config", "runtime"]),
-    makeSeedRepo("elizaOS", "agent-twitter-client", "Twitter/X client for Eliza agents", 60, 25, "TypeScript", ["twitter", "x", "agent", "social"]),
-    makeSeedRepo("elizaOS", "knowledge-base", "Knowledge base system for agent memory", 18, 8, "TypeScript", ["knowledge", "rag", "memory"]),
-    makeSeedRepo("elizaOS", "eliza-docs", "Documentation for elizaOS framework", 30, 15, "MDX", ["docs", "documentation", "eliza"]),
+    makeSeedRepo("elizaOS", "eliza-starter", "Starter template for building Eliza agents", 371, 579, "TypeScript", ["eliza", "starter", "template"]),
+    makeSeedRepo("elizaOS", "characterfile", "A simple file format for character data", 385, 145, "JavaScript", ["character", "agents", "llm"]),
+    makeSeedRepo("elizaOS", "agentmemory", "Easy-to-use agent memory, powered by chromadb and postgres", 231, 60, "Python", ["memory", "agent", "rag"]),
+    makeSeedRepo("elizaOS", "awesome-eliza", "A curated list of awesome things related to Eliza", 190, 40, "Markdown", ["awesome", "eliza"]),
+    makeSeedRepo("elizaOS", "agent-twitter-client", "Twitter/X client for Eliza agents", 60, 25, "TypeScript", ["twitter", "agent"]),
+    makeSeedRepo("elizaOS", "knowledge-base", "Knowledge base system for agent memory", 18, 8, "TypeScript", ["knowledge", "rag"]),
+    makeSeedRepo("elizaOS", "eliza-docs", "Documentation for elizaOS framework", 30, 15, "MDX", ["docs", "eliza"]),
   ];
 
   const pluginRepos: GitHubRepo[] = [
     makeSeedRepo("elizaos-plugins", "registry", "Plugin registry for the ElizaOS ecosystem", 50, 30, "TypeScript", ["registry", "plugins", "elizaos"]),
-    makeSeedRepo("elizaos-plugins", "plugin-discord", "Discord connector plugin", 25, 12, "TypeScript", ["discord", "plugin", "connector"]),
-    makeSeedRepo("elizaos-plugins", "plugin-telegram", "Telegram connector plugin", 22, 10, "TypeScript", ["telegram", "plugin", "connector"]),
-    makeSeedRepo("elizaos-plugins", "plugin-twitter", "Twitter/X connector plugin", 35, 18, "TypeScript", ["twitter", "plugin", "connector"]),
-    makeSeedRepo("elizaos-plugins", "plugin-solana", "Solana blockchain integration", 30, 15, "TypeScript", ["solana", "crypto", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-evm", "EVM/Ethereum blockchain support", 28, 14, "TypeScript", ["ethereum", "evm", "crypto"]),
-    makeSeedRepo("elizaos-plugins", "plugin-node", "Node.js runtime plugin", 15, 8, "TypeScript", ["node", "runtime"]),
-    makeSeedRepo("elizaos-plugins", "plugin-openai", "OpenAI model integration", 20, 9, "TypeScript", ["openai", "llm", "ai"]),
-    makeSeedRepo("elizaos-plugins", "plugin-anthropic", "Anthropic Claude integration", 18, 7, "TypeScript", ["anthropic", "claude", "llm"]),
-    makeSeedRepo("elizaos-plugins", "plugin-local-ai", "Local AI model support", 14, 5, "TypeScript", ["local", "llm", "ai"]),
-    makeSeedRepo("elizaos-plugins", "plugin-bootstrap", "Bootstrap/core actions plugin", 12, 6, "TypeScript", ["bootstrap", "core"]),
-    makeSeedRepo("elizaos-plugins", "plugin-image-generation", "AI image generation plugin", 16, 7, "TypeScript", ["image", "generation", "ai"]),
-    makeSeedRepo("elizaos-plugins", "plugin-video-generation", "AI video generation plugin", 10, 4, "TypeScript", ["video", "generation", "ai"]),
-    makeSeedRepo("elizaos-plugins", "plugin-tts", "Text-to-speech plugin", 8, 3, "TypeScript", ["tts", "speech", "audio"]),
-    makeSeedRepo("elizaos-plugins", "plugin-coinbase", "Coinbase Commerce integration", 10, 5, "TypeScript", ["coinbase", "crypto", "payment"]),
-    makeSeedRepo("elizaos-plugins", "plugin-starknet", "StarkNet blockchain integration", 8, 3, "TypeScript", ["starknet", "blockchain", "crypto"]),
-    makeSeedRepo("elizaos-plugins", "plugin-near", "NEAR Protocol integration", 6, 2, "TypeScript", ["near", "blockchain", "crypto"]),
-    makeSeedRepo("elizaos-plugins", "plugin-sui", "Sui blockchain integration", 5, 2, "TypeScript", ["sui", "blockchain", "crypto"]),
-    makeSeedRepo("elizaos-plugins", "plugin-flow", "Flow blockchain integration", 4, 1, "TypeScript", ["flow", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-whatsapp", "WhatsApp connector plugin", 12, 5, "TypeScript", ["whatsapp", "plugin", "connector"]),
-    makeSeedRepo("elizaos-plugins", "plugin-slack", "Slack workspace connector", 10, 4, "TypeScript", ["slack", "plugin", "connector"]),
-    makeSeedRepo("elizaos-plugins", "plugin-farcaster", "Farcaster social protocol", 8, 3, "TypeScript", ["farcaster", "social", "web3"]),
-    makeSeedRepo("elizaos-plugins", "plugin-lens", "Lens Protocol integration", 7, 2, "TypeScript", ["lens", "social", "web3"]),
-    makeSeedRepo("elizaos-plugins", "plugin-github", "GitHub integration plugin", 12, 5, "TypeScript", ["github", "plugin", "dev"]),
-    makeSeedRepo("elizaos-plugins", "plugin-giphy", "Giphy GIF integration", 3, 1, "TypeScript", ["giphy", "gif", "media"]),
-    makeSeedRepo("elizaos-plugins", "plugin-web-search", "Web search capability", 9, 4, "TypeScript", ["search", "web", "browsing"]),
-    makeSeedRepo("elizaos-plugins", "plugin-0g", "0G network integration", 4, 1, "TypeScript", ["0g", "network"]),
-    makeSeedRepo("elizaos-plugins", "plugin-goat", "GOAT tooling integration", 6, 2, "TypeScript", ["goat", "tools"]),
-    makeSeedRepo("elizaos-plugins", "plugin-icp", "Internet Computer Protocol plugin", 5, 2, "TypeScript", ["icp", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-multiversx", "MultiversX blockchain plugin", 4, 1, "TypeScript", ["multiversx", "blockchain"]),
+    makeSeedRepo("elizaos-plugins", "plugin-discord", "Discord connector plugin", 25, 12, "TypeScript", ["discord", "plugin"]),
+    makeSeedRepo("elizaos-plugins", "plugin-telegram", "Telegram connector plugin", 22, 10, "TypeScript", ["telegram", "plugin"]),
+    makeSeedRepo("elizaos-plugins", "plugin-twitter", "Twitter/X connector plugin", 35, 18, "TypeScript", ["twitter", "plugin"]),
+    makeSeedRepo("elizaos-plugins", "plugin-solana", "Solana blockchain integration", 30, 15, "TypeScript", ["solana", "crypto"]),
+    makeSeedRepo("elizaos-plugins", "plugin-evm", "EVM/Ethereum blockchain support", 28, 14, "TypeScript", ["ethereum", "evm"]),
+    makeSeedRepo("elizaos-plugins", "plugin-openai", "OpenAI model integration", 20, 9, "TypeScript", ["openai", "llm"]),
+    makeSeedRepo("elizaos-plugins", "plugin-anthropic", "Anthropic Claude integration", 18, 7, "TypeScript", ["anthropic", "claude"]),
+    makeSeedRepo("elizaos-plugins", "plugin-image-generation", "AI image generation plugin", 16, 7, "TypeScript", ["image", "ai"]),
+    makeSeedRepo("elizaos-plugins", "plugin-whatsapp", "WhatsApp connector plugin", 12, 5, "TypeScript", ["whatsapp", "plugin"]),
+    makeSeedRepo("elizaos-plugins", "plugin-slack", "Slack workspace connector", 10, 4, "TypeScript", ["slack", "plugin"]),
+    makeSeedRepo("elizaos-plugins", "plugin-github", "GitHub integration plugin", 12, 5, "TypeScript", ["github", "plugin"]),
+    makeSeedRepo("elizaos-plugins", "plugin-web-search", "Web search capability", 9, 4, "TypeScript", ["search", "web"]),
+    makeSeedRepo("elizaos-plugins", "plugin-starknet", "StarkNet blockchain integration", 8, 3, "TypeScript", ["starknet", "crypto"]),
+    makeSeedRepo("elizaos-plugins", "plugin-near", "NEAR Protocol integration", 6, 2, "TypeScript", ["near", "crypto"]),
+    makeSeedRepo("elizaos-plugins", "plugin-sui", "Sui blockchain integration", 5, 2, "TypeScript", ["sui", "crypto"]),
+    makeSeedRepo("elizaos-plugins", "plugin-farcaster", "Farcaster social protocol", 8, 3, "TypeScript", ["farcaster", "social"]),
+    makeSeedRepo("elizaos-plugins", "plugin-lens", "Lens Protocol integration", 7, 2, "TypeScript", ["lens", "social"]),
+    makeSeedRepo("elizaos-plugins", "plugin-coinbase", "Coinbase Commerce integration", 10, 5, "TypeScript", ["coinbase", "crypto"]),
     makeSeedRepo("elizaos-plugins", "plugin-tee", "Trusted Execution Environment plugin", 7, 3, "TypeScript", ["tee", "security"]),
-    makeSeedRepo("elizaos-plugins", "plugin-ton", "TON blockchain integration", 5, 2, "TypeScript", ["ton", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-cronoszkevm", "Cronos zkEVM plugin", 3, 1, "TypeScript", ["cronos", "zkevm", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-avalanche", "Avalanche blockchain plugin", 4, 1, "TypeScript", ["avalanche", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-story", "Story Protocol integration", 5, 2, "TypeScript", ["story", "ip"]),
-    makeSeedRepo("elizaos-plugins", "plugin-rabbi-trader", "Crypto trading agent plugin", 8, 4, "TypeScript", ["trading", "crypto", "defi"]),
-    makeSeedRepo("elizaos-plugins", "plugin-nft-generation", "NFT creation and minting plugin", 6, 2, "TypeScript", ["nft", "generation", "crypto"]),
-    makeSeedRepo("elizaos-plugins", "plugin-aptos", "Aptos blockchain integration", 5, 2, "TypeScript", ["aptos", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-cosmos", "Cosmos ecosystem integration", 4, 1, "TypeScript", ["cosmos", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-conflux", "Conflux blockchain plugin", 3, 1, "TypeScript", ["conflux", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-coding-agent", "Coding agent orchestration - spawn CLI agents via PTY", 0, 0, "TypeScript", []),
-    makeSeedRepo("elizaos-plugins", "plugin-ui", "Plugin UI SDK - schema-driven config renderers", 0, 0, "TypeScript", []),
-    makeSeedRepo("elizaos-plugins", "plugin-repoprompt", "RepoPrompt CLI integration", 0, 0, "TypeScript", []),
-    makeSeedRepo("elizaos-plugins", "plugin-pi-ai", "Pi AI credential bridge", 0, 0, "TypeScript", []),
-    makeSeedRepo("elizaos-plugins", "plugin-claude-code-workbench", "Claude Code companion workflow", 0, 0, "TypeScript", []),
-    makeSeedRepo("elizaos-plugins", "plugin-allora", "Allora network integration", 3, 1, "TypeScript", ["allora", "ai"]),
-    makeSeedRepo("elizaos-plugins", "plugin-birdeye", "Birdeye DeFi analytics", 4, 2, "TypeScript", ["birdeye", "defi"]),
-    makeSeedRepo("elizaos-plugins", "plugin-pyth", "Pyth Network oracle integration", 3, 1, "TypeScript", ["pyth", "oracle"]),
-    makeSeedRepo("elizaos-plugins", "plugin-bnb", "BNB Chain integration", 4, 2, "TypeScript", ["bnb", "blockchain"]),
-    makeSeedRepo("elizaos-plugins", "plugin-arbitrum", "Arbitrum L2 integration", 3, 1, "TypeScript", ["arbitrum", "l2"]),
-    makeSeedRepo("elizaos-plugins", "plugin-zksync", "zkSync Era integration", 3, 1, "TypeScript", ["zksync", "l2"]),
+    makeSeedRepo("elizaos-plugins", "plugin-ton", "TON blockchain integration", 5, 2, "TypeScript", ["ton", "crypto"]),
+    makeSeedRepo("elizaos-plugins", "plugin-aptos", "Aptos blockchain integration", 5, 2, "TypeScript", ["aptos", "crypto"]),
+    makeSeedRepo("elizaos-plugins", "plugin-polymarket", "Polymarket prediction market plugin", 4, 2, "TypeScript", ["polymarket", "prediction"]),
+    makeSeedRepo("elizaos-plugins", "plugin-rabbi-trader", "Crypto trading agent plugin", 8, 4, "TypeScript", ["trading", "defi"]),
+    makeSeedRepo("elizaos-plugins", "plugin-nft-generation", "NFT creation and minting plugin", 6, 2, "TypeScript", ["nft", "crypto"]),
   ];
 
-  return { elizaOSRepos, pluginRepos };
+  const communityRepos: GitHubRepo[] = [
+    makeSeedRepo("milady-ai", "milady", "terminally online - eliza fork", 243, 52, "TypeScript", 
+      ["agent", "eliza", "elizaos", "autonomous-agents"]),
+    makeSeedRepo("jmikedupont2", "ai-agent-terraform", "Terraform framework for deploying elizaOS agents", 25, 18, "HCL", 
+      ["agents", "ai", "eliza", "elizaos", "terraform"]),
+    makeSeedRepo("multiversx", "mx-agent-kit", "MultiversX AI Agent Kit for elizaOS", 23, 3, "Shell", 
+      ["agents", "ai", "eliza", "elizaos", "multiversx"]),
+    makeSeedRepo("fleek-network", "eliza-fleek", "Eliza deployment on Fleek", 15, 8, "TypeScript", 
+      ["eliza", "fleek", "deployment"]),
+  ];
+
+  return { elizaOSRepos, pluginRepos, communityRepos };
 }
 
 export async function GET(request: Request) {
+  const startTime = Date.now();
+  
   try {
     const { searchParams } = new URL(request.url);
     const forceRefresh = searchParams.get("refresh") === "true";
 
     const now = Date.now();
     if (cachedData && !forceRefresh && now - cachedAt < CACHE_TTL) {
+      console.log("[ecosystem-api] Returning cached data");
       return NextResponse.json(cachedData, {
         headers: {
           "X-Cache": "HIT",
@@ -137,47 +120,67 @@ export async function GET(request: Request) {
 
     let elizaOSRepos: GitHubRepo[] = [];
     let pluginRepos: GitHubRepo[] = [];
+    let communityRepos: GitHubRepo[] = [];
     let source = "live";
 
     try {
-      console.log("[ecosystem-api] Attempting live GitHub fetch...");
+      console.log("[ecosystem-api] Starting live GitHub fetch...");
       const liveData = await fetchAllEcosystemRepos();
       elizaOSRepos = liveData.elizaOSRepos;
       pluginRepos = liveData.pluginRepos;
+      communityRepos = liveData.communityRepos;
 
-      // If we got very few results, the API likely failed silently
-      if (elizaOSRepos.length + pluginRepos.length < 5) {
+      const totalRepos = elizaOSRepos.length + pluginRepos.length + communityRepos.length;
+      console.log(`[ecosystem-api] Live fetch got ${totalRepos} repos total`);
+
+      // If we got very few results, the API likely failed
+      if (totalRepos < 10) {
         console.warn("[ecosystem-api] Too few results from GitHub, using seed data");
         throw new Error("Insufficient data from GitHub API");
       }
 
-      console.log(
-        `[ecosystem-api] Live fetch success: ${elizaOSRepos.length} + ${pluginRepos.length} repos`
-      );
     } catch (apiError) {
       console.warn("[ecosystem-api] GitHub API failed, falling back to seed data:", apiError);
       const seed = getSeedData();
       elizaOSRepos = seed.elizaOSRepos;
       pluginRepos = seed.pluginRepos;
+      communityRepos = seed.communityRepos;
       source = "seed";
     }
 
-    const data = await buildEcosystemData(elizaOSRepos, pluginRepos);
+    // Fetch contributors for top repos (only if we have a token to avoid rate limits)
+    let contributorMap = new Map();
+    if (process.env.GITHUB_TOKEN && source === "live") {
+      try {
+        const allRepos = [...elizaOSRepos, ...pluginRepos, ...communityRepos];
+        contributorMap = await fetchContributorsForRepos(allRepos, 20, 5);
+      } catch (err) {
+        console.warn("[ecosystem-api] Failed to fetch contributors:", err);
+      }
+    }
+
+    const data = await buildEcosystemData(elizaOSRepos, pluginRepos, communityRepos, contributorMap);
 
     cachedData = data;
     cachedAt = now;
+
+    const duration = Date.now() - startTime;
+    console.log(`[ecosystem-api] Built ecosystem data in ${duration}ms. Source: ${source}`);
 
     return NextResponse.json(data, {
       headers: {
         "X-Cache": "MISS",
         "X-Source": source,
+        "X-Duration-Ms": duration.toString(),
         "X-Fetched-At": data.meta.fetchedAt,
       },
     });
   } catch (error) {
     console.error("[ecosystem-api] Fatal error:", error);
 
+    // Return cached data if available
     if (cachedData) {
+      console.log("[ecosystem-api] Returning stale cached data after error");
       return NextResponse.json(cachedData, {
         headers: { "X-Cache": "STALE" },
       });
@@ -187,7 +190,7 @@ export async function GET(request: Request) {
     try {
       console.log("[ecosystem-api] Building from seed data as last resort...");
       const seed = getSeedData();
-      const data = await buildEcosystemData(seed.elizaOSRepos, seed.pluginRepos);
+      const data = await buildEcosystemData(seed.elizaOSRepos, seed.pluginRepos, seed.communityRepos);
       cachedData = data;
       cachedAt = Date.now();
       return NextResponse.json(data, {
@@ -196,7 +199,7 @@ export async function GET(request: Request) {
     } catch (seedError) {
       console.error("[ecosystem-api] Even seed data failed:", seedError);
       return NextResponse.json(
-        { error: "Failed to build ecosystem data" },
+        { error: "Failed to build ecosystem data", details: String(seedError) },
         { status: 500 }
       );
     }
