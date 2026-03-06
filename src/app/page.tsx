@@ -1,11 +1,17 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
+import dynamic from "next/dynamic";
 import useSWR from "swr";
-import EcosystemGraph from "@/components/ecosystem-graph";
+import CockpitHUD from "@/components/cockpit-hud";
 import NodeDetailPanel from "@/components/node-detail-panel";
-import GraphControls from "@/components/graph-controls";
 import type { EcosystemNode, EcosystemData } from "@/lib/ecosystem-types";
+
+// Dynamic import for 3D components (they need client-side only)
+const GalaxyView = dynamic(() => import("@/components/galaxy-view"), {
+  ssr: false,
+  loading: () => <LoadingState />,
+});
 
 const ALL_CATEGORIES = new Set([
   "core",
@@ -31,7 +37,6 @@ export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategories, setActiveCategories] = useState<Set<string>>(ALL_CATEGORIES);
   const [selectedNode, setSelectedNode] = useState<EcosystemNode | null>(null);
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   const { data, error, isLoading, mutate } = useSWR<EcosystemData>(
     "/api/ecosystem",
@@ -44,18 +49,6 @@ export default function HomePage() {
 
   const handleNodeClick = useCallback((node: EcosystemNode) => {
     setSelectedNode(node);
-  }, []);
-
-  const handleNodeDoubleClick = useCallback((node: EcosystemNode) => {
-    setExpandedNodes((prev) => {
-      const next = new Set(prev);
-      if (next.has(node.id)) {
-        next.delete(node.id);
-      } else {
-        next.add(node.id);
-      }
-      return next;
-    });
   }, []);
 
   const handleToggleCategory = useCallback((category: string) => {
@@ -78,16 +71,8 @@ export default function HomePage() {
     );
   }, [mutate]);
 
-  const handleExpandFromPanel = useCallback((node: EcosystemNode) => {
-    setExpandedNodes((prev) => {
-      const next = new Set(prev);
-      if (next.has(node.id)) {
-        next.delete(node.id);
-      } else {
-        next.add(node.id);
-      }
-      return next;
-    });
+  const handleExpandFromPanel = useCallback(() => {
+    // In 3D view, we could zoom to the node
   }, []);
 
   // Close panel on Escape
@@ -100,9 +85,9 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="w-screen h-screen overflow-hidden relative">
-      {/* HUD Controls */}
-      <GraphControls
+    <div className="w-screen h-screen overflow-hidden bg-[#030014]">
+      {/* Cockpit HUD overlay */}
+      <CockpitHUD
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
         activeCategories={activeCategories}
@@ -112,22 +97,19 @@ export default function HomePage() {
         onRefresh={handleRefresh}
       />
 
-      {/* Main graph area */}
-      <div
-        className="w-full h-full transition-[padding] duration-300"
-        style={{ paddingRight: selectedNode ? 380 : 0 }}
-      >
+      {/* Main 3D view */}
+      <div className="w-full h-full">
         {isLoading && !data && <LoadingState />}
         {error && !data && <ErrorState onRetry={handleRefresh} />}
         {data && (
-          <EcosystemGraph
-            data={data}
-            onNodeClick={handleNodeClick}
-            onNodeDoubleClick={handleNodeDoubleClick}
-            searchQuery={searchQuery}
-            activeCategories={activeCategories}
-            expandedNodes={expandedNodes}
-          />
+          <Suspense fallback={<LoadingState />}>
+            <GalaxyView
+              data={data}
+              onNodeClick={handleNodeClick}
+              searchQuery={searchQuery}
+              activeCategories={activeCategories}
+            />
+          </Suspense>
         )}
       </div>
 
@@ -137,7 +119,7 @@ export default function HomePage() {
           node={selectedNode}
           onClose={() => setSelectedNode(null)}
           onExpand={handleExpandFromPanel}
-          isExpanded={expandedNodes.has(selectedNode.id)}
+          isExpanded={false}
         />
       )}
     </div>
@@ -145,16 +127,16 @@ export default function HomePage() {
 }
 
 function LoadingState() {
-  const [statusText, setStatusText] = useState("INITIALIZING SYSTEMS");
+  const [statusText, setStatusText] = useState("INITIALIZING WARP DRIVE");
 
   useEffect(() => {
     const messages = [
-      "INITIALIZING SYSTEMS",
-      "SCANNING STAR CHARTS",
-      "MAPPING ORBITAL PATHS",
-      "ANALYZING GRAVITATIONAL BONDS",
-      "LOADING CREW MANIFESTS",
-      "ESTABLISHING CONNECTIONS",
+      "INITIALIZING WARP DRIVE",
+      "CALIBRATING SENSORS",
+      "SCANNING QUADRANT",
+      "MAPPING STAR SYSTEMS",
+      "ESTABLISHING NEURAL LINK",
+      "LOADING UNIVERSE DATA",
     ];
     let i = 0;
     const interval = setInterval(() => {
@@ -165,60 +147,63 @@ function LoadingState() {
   }, []);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-8">
-      {/* Animated rings */}
-      <div className="relative w-40 h-40">
-        {/* Outer ring */}
-        <div
-          className="absolute inset-0 rounded-full border border-accent/30 animate-spin-slow"
-          style={{ animationDuration: "20s" }}
-        />
-        {/* Middle ring */}
-        <div
-          className="absolute inset-4 rounded-full border border-purple-500/40 animate-spin-slow"
-          style={{ animationDuration: "15s", animationDirection: "reverse" }}
-        />
-        {/* Inner ring */}
-        <div
-          className="absolute inset-8 rounded-full border border-orange-500/30 animate-spin-slow"
-          style={{ animationDuration: "10s" }}
-        />
-        {/* Core */}
-        <div className="absolute inset-12 rounded-full bg-gradient-to-br from-yellow-300 via-yellow-400 to-orange-500 flex items-center justify-center animate-pulse">
-          <span className="text-2xl font-bold text-black">E</span>
+    <div className="w-full h-full flex flex-col items-center justify-center gap-8 bg-[#030014]">
+      {/* Animated warp effect */}
+      <div className="relative w-48 h-48">
+        {/* Outer warp ring */}
+        <div className="absolute inset-0 rounded-full border-2 border-accent/20 animate-ping" />
+        
+        {/* Middle rings */}
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="absolute rounded-full border border-cyan-500/30"
+            style={{
+              inset: `${i * 20}px`,
+              animation: `spin ${8 + i * 2}s linear infinite${i % 2 ? " reverse" : ""}`,
+            }}
+          />
+        ))}
+        
+        {/* Core glow */}
+        <div className="absolute inset-16 rounded-full bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500 flex items-center justify-center shadow-[0_0_60px_rgba(251,191,36,0.5)]">
+          <span className="text-3xl font-bold text-black animate-pulse">E</span>
         </div>
-        {/* Orbiting dots */}
-        <div
-          className="absolute inset-0 animate-spin-slow"
-          style={{ animationDuration: "8s" }}
-        >
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-accent" />
-        </div>
-        <div
-          className="absolute inset-4 animate-spin-slow"
-          style={{ animationDuration: "6s", animationDirection: "reverse" }}
-        >
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-purple-400" />
+        
+        {/* Particle ring */}
+        <div className="absolute inset-0 animate-spin" style={{ animationDuration: "6s" }}>
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-2 h-2 rounded-full bg-accent"
+              style={{
+                top: "50%",
+                left: "50%",
+                transform: `rotate(${i * 45}deg) translateX(90px)`,
+              }}
+            />
+          ))}
         </div>
       </div>
 
       {/* Status text */}
-      <div className="text-center animate-fade-in">
-        <p className="text-sm font-mono font-medium text-accent tracking-[0.3em]">
-          ELIZA CARTOGRAPHY
+      <div className="text-center">
+        <p className="text-lg font-mono font-bold text-accent tracking-[0.4em]">
+          ELIZA UNIVERSE
         </p>
         <p className="text-xs font-mono text-muted-foreground mt-2 tracking-wider animate-pulse">
           {statusText}...
         </p>
       </div>
 
-      {/* Progress bar */}
-      <div className="w-64 h-1 rounded-full bg-muted overflow-hidden">
+      {/* Loading bar */}
+      <div className="w-72 h-1.5 rounded-full bg-white/5 overflow-hidden">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-accent via-purple-500 to-accent animate-pulse"
+          className="h-full bg-gradient-to-r from-accent via-purple-500 to-accent rounded-full"
           style={{
-            width: "60%",
-            animation: "pulse 2s ease-in-out infinite, shimmer 2s ease-in-out infinite",
+            width: "100%",
+            animation: "shimmer 2s ease-in-out infinite",
+            backgroundSize: "200% 100%",
           }}
         />
       </div>
@@ -228,36 +213,39 @@ function LoadingState() {
 
 function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center gap-6">
-      {/* Error icon */}
+    <div className="w-full h-full flex flex-col items-center justify-center gap-6 bg-[#030014]">
+      {/* Error visualization */}
       <div className="relative">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-red-500/20 to-red-900/20 border border-red-500/30 flex items-center justify-center">
-          <span className="text-red-400 text-3xl font-bold">!</span>
+        <div className="w-24 h-24 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center">
+          <svg className="w-10 h-10 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
         </div>
-        <div className="absolute inset-0 rounded-full border border-red-500/50 animate-ping opacity-50" />
+        <div className="absolute inset-0 rounded-full border border-red-500/50 animate-ping" />
       </div>
 
-      {/* Error text */}
-      <div className="text-center hud-panel rounded-lg px-6 py-4 relative">
+      {/* Error message */}
+      <div className="text-center hud-panel rounded-lg px-8 py-5 relative max-w-sm">
         <div className="hud-corner hud-corner-tl" />
         <div className="hud-corner hud-corner-tr" />
         <div className="hud-corner hud-corner-bl" />
         <div className="hud-corner hud-corner-br" />
         
-        <p className="text-sm font-mono font-medium text-red-400 tracking-wider">
-          TRANSMISSION FAILURE
+        <p className="text-sm font-mono font-bold text-red-400 tracking-wider">
+          NAVIGATION OFFLINE
         </p>
-        <p className="text-xs font-mono text-muted-foreground mt-2 max-w-xs">
-          Unable to establish connection with galaxy data. Verify GITHUB_TOKEN configuration or retry transmission.
+        <p className="text-xs font-mono text-muted-foreground mt-2">
+          Unable to establish connection with the Eliza Universe. Check your
+          GITHUB_TOKEN configuration or retry transmission.
         </p>
       </div>
 
       {/* Retry button */}
       <button
         onClick={onRetry}
-        className="px-6 py-3 rounded-lg font-mono text-sm tracking-wider transition-all border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent/50"
+        className="px-8 py-3 rounded-lg font-mono text-sm tracking-wider transition-all border border-accent/30 bg-accent/10 text-accent hover:bg-accent/20 hover:border-accent/50"
       >
-        RETRY TRANSMISSION
+        REINITIALIZE CONNECTION
       </button>
     </div>
   );
