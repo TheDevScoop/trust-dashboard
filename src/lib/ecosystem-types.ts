@@ -3,7 +3,12 @@ export type NodeCategory =
   | "official-tool"
   | "plugin"
   | "community"
-  | "documentation";
+  | "documentation"
+  | "game"
+  | "adapter"
+  | "client"
+  | "infrastructure"
+  | "community-plugin";
 
 export interface EcosystemNode {
   id: string;
@@ -64,6 +69,8 @@ export interface EcosystemData {
     fetchedAt: string;
     elizaOSRepoCount: number;
     pluginRepoCount: number;
+    communityRepoCount: number;
+    registryPluginCount: number;
   };
 }
 

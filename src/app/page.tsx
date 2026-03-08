@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import Link from "next/link";
 import useSWR from "swr";
 import EcosystemGraph from "@/components/ecosystem-graph";
 import NodeDetailPanel from "@/components/node-detail-panel";
@@ -11,7 +12,12 @@ const ALL_CATEGORIES = new Set([
   "core",
   "official-tool",
   "plugin",
+  "adapter",
+  "client",
+  "community-plugin",
   "community",
+  "game",
+  "infrastructure",
   "documentation",
 ]);
 
@@ -137,6 +143,22 @@ export default function HomePage() {
       <div className="absolute bottom-4 left-4 z-20 text-[10px] text-muted-foreground space-y-0.5">
         <p>Drag nodes to rearrange. Scroll to zoom.</p>
         <p>Click a node for details. Double-click to expand contributors.</p>
+      </div>
+
+      {/* Mode links */}
+      <div className="absolute bottom-4 right-4 z-20 flex gap-2">
+        <Link
+          href="/arcade"
+          className="px-4 py-2 rounded-lg border border-[#ff0040]/30 bg-card/80 backdrop-blur text-sm text-[#ff0040] hover:border-[#ff0040] hover:bg-[#ff0040]/10 transition-all font-mono"
+        >
+          ARCADE MODE
+        </Link>
+        <Link
+          href="/world"
+          className="px-4 py-2 rounded-lg border border-accent/30 bg-card/80 backdrop-blur text-sm text-accent hover:border-accent hover:bg-accent/10 transition-all"
+        >
+          Enter 3D World
+        </Link>
       </div>
     </div>
   );
